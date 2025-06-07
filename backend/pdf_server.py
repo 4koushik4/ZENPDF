@@ -24,8 +24,8 @@ CORS(app, resources={
     r"/*": {
         "origins": [
             "http://localhost:3000",  # Local development
-            "https://your-frontend-domain.com",  # Your production frontend domain
-            "https://*.your-frontend-domain.com"  # Any subdomain
+            "https://zen-pdf.vercel.app",  # Your Vercel frontend domain
+            "https://*.vercel.app"  # Any Vercel subdomain
         ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
@@ -141,6 +141,10 @@ def add_watermark(input_pdf, watermark_pdf, output_pdf, layer='above', selected_
     except Exception as e:
         print(f"Error in add_watermark: {str(e)}")
         return False
+
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"status": "ok", "message": "Server is running"})
 
 @app.route('/watermark-pdf', methods=['POST'])
 def watermark_pdf():

@@ -3,7 +3,7 @@ const config = {
         apiUrl: 'http://localhost:5000'
     },
     production: {
-        apiUrl: 'https://zen-pdf-backend.onrender.com'  // Replace with your Render backend URL
+        apiUrl: 'https://zen-pdf-backend-izaa.onrender.com'  // Your Render backend URL
     }
 };
 
