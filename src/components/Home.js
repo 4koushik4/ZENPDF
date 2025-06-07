@@ -129,7 +129,7 @@ const Home = () => {
               <p className="creator-title">Full Stack Developer</p>
               <p className="creator-description">Passionate about building secure, user-friendly web applications. Specializing in React, Node.js, and Python development. Always focused on creating intuitive solutions that make a difference.</p>
               <div className="creator-links">
-                <a href="https://github.com/koushikjuluri/pdfconverter" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/4koushik4/ZENPDF" target="_blank" rel="noopener noreferrer">
                   <i className="fab fa-github"></i>
                 </a>
                 <a href="https://www.linkedin.com/in/koushikjuluri/" target="_blank" rel="noopener noreferrer">
