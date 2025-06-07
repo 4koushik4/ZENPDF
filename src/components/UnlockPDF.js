@@ -71,6 +71,10 @@ const UnlockPDF = () => {
       const response = await fetch(`${config.apiUrl}/unlock-pdf`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/pdf'
+        }
       });
 
       if (!response.ok) {
@@ -79,14 +83,7 @@ const UnlockPDF = () => {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
         } catch (e) {
-          // If response is not JSON, try to get text
-          try {
-            const text = await response.text();
-            errorMessage = text || errorMessage;
-          } catch (e) {
-            // If all else fails, use status text
-            errorMessage = response.statusText || errorMessage;
-          }
+          console.error('Error parsing error response:', e);
         }
         throw new Error(errorMessage);
       }

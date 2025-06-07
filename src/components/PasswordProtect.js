@@ -78,6 +78,10 @@ const PasswordProtect = () => {
       const response = await fetch(`${config.apiUrl}/protect-pdf`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/pdf'
+        }
       });
 
       if (!response.ok) {
@@ -87,7 +91,6 @@ const PasswordProtect = () => {
           errorMessage = errorData.error || errorMessage;
         } catch (e) {
           console.error('Error parsing error response:', e);
-          errorMessage = response.statusText || errorMessage;
         }
         throw new Error(errorMessage);
       }

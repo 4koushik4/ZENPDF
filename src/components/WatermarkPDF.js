@@ -114,16 +114,19 @@ const WatermarkPDF = () => {
       const response = await fetch(`${config.apiUrl}/watermark-pdf`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/pdf'
+        }
       });
 
       if (!response.ok) {
-        let errorMessage = 'Failed to watermark PDF';
+        let errorMessage = 'Failed to add watermark';
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
         } catch (e) {
           console.error('Error parsing error response:', e);
-          errorMessage = response.statusText || errorMessage;
         }
         throw new Error(errorMessage);
       }
