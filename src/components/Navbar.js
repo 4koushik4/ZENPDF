@@ -106,7 +106,7 @@ const Navbar = () => {
 
           {/* Regular Navigation Links */}
           <ul className="nav-links">
-            <li><Link to="/" onClick={() => { setDropdownOpen(false); setMobileMenuOpen(false); }}>Home</Link></li>
+            <li><Link to="/home" onClick={() => { setDropdownOpen(false); setMobileMenuOpen(false); }}>Home</Link></li>
             <li><Link to="/merge" onClick={() => { setDropdownOpen(false); setMobileMenuOpen(false); }}>Merge PDF</Link></li>
             <li><Link to="/split" onClick={() => { setDropdownOpen(false); setMobileMenuOpen(false); }}>Split PDF</Link></li>
             <li><Link to="/image-to-pdf" onClick={() => { setDropdownOpen(false); setMobileMenuOpen(false); }}>Image to PDF</Link></li>

@@ -118,7 +118,7 @@ const UnlockPDF = () => {
   return (
     <div className="unlock-pdf">
     <div className="unlock-pdf-container">
-      <h2>Unlock PDF</h2>
+      <h2 >Unlock PDF</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="pdfFile">Select PDF File:</label>

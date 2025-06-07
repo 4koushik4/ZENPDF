@@ -26,7 +26,7 @@ const Home0 = () => {
     setIsClicked(true);
     const newButterflies = Array.from({ length: 20 }, createButterfly);
     setButterflies(newButterflies);
-    setTimeout(() => navigate("/"), 1800);
+    setTimeout(() => navigate("/home"), 1800);
   };
 
   return (

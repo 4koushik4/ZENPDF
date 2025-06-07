@@ -30,7 +30,7 @@ import Contact from './components/Contact';
 // Create a layout component that conditionally renders the Navbar
 const Layout = ({ children }) => {
   const location = useLocation();
-  const hideNavbar = location.pathname === "/home0";
+  const hideNavbar = location.pathname === "/";
   
   return (
     <>

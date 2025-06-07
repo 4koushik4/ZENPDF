@@ -14,7 +14,7 @@ const Support = () => {
           <div className="support-card">
             <h3>Email Support</h3>
             <p>For detailed inquiries or technical issues</p>
-            <a href="mailto:koushikjuluri44@gmail.com" className="support-button">
+            <a href="mailto:koushikjuluri4444@gmail.com" className="support-button">
               Contact Support
             </a>
           </div>
@@ -22,7 +22,7 @@ const Support = () => {
           <div className="support-card">
             <h3>GitHub Issues</h3>
             <p>For bug reports and feature requests</p>
-            <a href="https://github.com/4koushik4/zenpdftools/issues" target="_blank" rel="noopener noreferrer" className="support-button">
+            <a href="https://github.com/4koushik4/ZENPDF/issues" target="_blank" rel="noopener noreferrer" className="support-button">
               Report Issue
             </a>
           </div>

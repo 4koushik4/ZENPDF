@@ -117,8 +117,9 @@ const PasswordProtect = () => {
 
   return (
     <div className="password-protect-container">
-      <h2>Password Protect PDF</h2>
+      
       <form onSubmit={handleSubmit}>
+      <h2>Password Protect PDF</h2>
         <div className="form-group">
           <label htmlFor="pdfFile">Select PDF File:</label>
           <input
