@@ -46,12 +46,12 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/home0" element={
+        <Route path="/" element={
           <Layout>
             <Home0 />
           </Layout>
         } />
-        <Route path="/" element={
+        <Route path="/home" element={
           <Layout>
             <Home />
           </Layout>
@@ -142,8 +142,8 @@ const App = () => {
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
-        {/* Redirect all unknown routes to Home0 Page */}
-        <Route path="*" element={<Navigate to="/home0" replace />} />
+        {/* Redirect all unknown routes to Home Page */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
