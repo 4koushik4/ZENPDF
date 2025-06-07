@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './WatermarkPDF.css';
+import config from '../config';
 
 const WatermarkPDF = () => {
   const [file, setFile] = useState(null);
@@ -110,7 +111,7 @@ const WatermarkPDF = () => {
       formData.append('imageSize', imageSize);
 
       console.log('Sending request to watermark PDF...');
-      const response = await fetch('http://localhost:5000/watermark-pdf', {
+      const response = await fetch(`${config.apiUrl}/watermark-pdf`, {
         method: 'POST',
         body: formData,
       });

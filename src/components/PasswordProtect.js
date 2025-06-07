@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import './PasswordProtect.css';
+import config from '../config';
 
 const PasswordProtect = () => {
   const [file, setFile] = useState(null);
@@ -74,7 +75,7 @@ const PasswordProtect = () => {
       formData.append('fileName', fileName);
 
       console.log('Sending request to protect PDF...');
-      const response = await fetch('http://localhost:5000/protect-pdf', {
+      const response = await fetch(`${config.apiUrl}/protect-pdf`, {
         method: 'POST',
         body: formData,
       });

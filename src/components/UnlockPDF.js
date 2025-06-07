@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import './UnlockPDF.css';
+import config from '../config';
 
 const UnlockPDF = () => {
   const [file, setFile] = useState(null);
@@ -55,8 +56,8 @@ const UnlockPDF = () => {
       return;
     }
 
-    if (!fileName) {
-      setError('Please enter a filename');
+    if (!password) {
+      setError('Please enter the PDF password');
       return;
     }
 
@@ -66,9 +67,8 @@ const UnlockPDF = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('password', password);
-      formData.append('fileName', fileName);
 
-      const response = await fetch('http://localhost:5000/unlock-pdf', {
+      const response = await fetch(`${config.apiUrl}/unlock-pdf`, {
         method: 'POST',
         body: formData,
       });
