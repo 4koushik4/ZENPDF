@@ -1,0 +1,67 @@
+/* src/components/SplitPDF.css */
+.split{
+  text-align: center;
+  padding: 50px 20px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #ffdde1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.split-container {
+  max-width: 500px;
+  margin: 50px auto;
+  padding: 30px;
+  color: #fff;
+  background: linear-gradient(135deg, #ec818a, #ec818a, #ec818a, #ec818a);
+
+  font-family: "Poppins", sans-serif;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(255, 56, 96, 0.3);
+  text-align: center;
+}
+.split-container:hover{
+  transform: translateY(-5px);
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #fbc2eb, #a6c1ee);
+  color:black;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+input {
+  margin: 10px;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: none;
+  width: 300px;
+}
+
+button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 20px;
+  margin: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.download-btn {
+  background-color: #007bff;
+}
+
+.download-btn:hover {
+  background-color: #0056b3;
+}

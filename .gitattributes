@@ -1,0 +1,11 @@
+# Auto-detect text files and normalize line endings to LF in repo
+* text=auto
+
+# Force specific file types to LF
+*.js     text eol=lf
+*.jsx    text eol=lf
+*.css    text eol=lf
+*.py     text eol=lf
+*.json   text eol=lf
+*.html   text eol=lf
+*.md     text eol=lf

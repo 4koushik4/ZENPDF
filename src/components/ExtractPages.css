@@ -1,0 +1,105 @@
+.extract {
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #ffdde1);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: "Poppins", sans-serif;
+}
+
+.extract-container {
+  max-width: 500px;
+  margin: 50px auto;
+  padding: 30px;
+  color:black;
+  background: linear-gradient(135deg, #ec818a, #ec818a, #ec818a, #ec818a);
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(255, 56, 96, 0.3);
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+.extract-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #fbc2eb, #a6c1ee);
+  color:black;
+}
+
+.extract-container input {
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 8px;
+  width: 80%;
+  text-align: center;
+  border: none;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.extract-container input:focus {
+  outline: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.extract-container button {
+  background: #ff416c;
+  color: white;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  margin-top: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(255, 65, 108, 0.4);
+  width: 80%;
+  max-width: 300px;
+}
+
+.extract-container button:hover {
+  background: #ff4b2b;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(255, 75, 43, 0.5);
+}
+
+.extract-container a {
+  margin-top: 25px;
+  display: inline-block;
+  background: #00c6ff;
+  color: white;
+  padding: 12px 25px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 198, 255, 0.4);
+  width: 80%;
+  max-width: 300px;
+}
+
+.extract-container a:hover {
+  background: #0072ff;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 114, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .extract-container {
+      margin: 20px auto;
+      padding: 25px 20px;
+      width: 90%;
+  }
+  
+  .extract-container input,
+  .extract-container button,
+  .extract-container a {
+      width: 90%;
+  }
+}

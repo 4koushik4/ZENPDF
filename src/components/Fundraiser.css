@@ -1,0 +1,463 @@
+.fundraiser-container {
+  text-align: center;
+  padding: 50px 20px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #ffdde1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Quote Styles */
+.quote-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 15px 25px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  max-width: 80%;
+  z-index: 100;
+  margin-top: 20px;
+  border: 2px solid #ec818a;
+}
+
+.quote-text {
+  font-size: 1.2rem;
+  color: #333;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.5;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Batch Indicator */
+.batch-indicator {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 5px 15px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #ec818a;
+  display: inline-block;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Monkey Playgrounds */
+.monkey-playground {
+  position: fixed;
+  top: 0;
+  width: 150px;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to right, rgba(255, 154, 158, 0.1), transparent);
+  padding: 20px;
+}
+
+.monkey-playground.left {
+  left: 0;
+  background: linear-gradient(to right, rgba(255, 154, 158, 0.2), transparent);
+}
+
+.monkey-playground.right {
+  right: 0;
+  background: linear-gradient(to left, rgba(255, 154, 158, 0.2), transparent);
+}
+
+.monkey {
+  position: absolute;
+  font-size: 3rem;
+  z-index: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  transition: transform 0.3s ease;
+}
+
+.monkey.swing {
+  animation: swing 2s infinite;
+}
+
+.monkey.jump {
+  animation: jump 2s infinite;
+}
+
+@keyframes swing {
+  0%, 100% { transform: rotate(-15deg) scale(1); }
+  50% { transform: rotate(15deg) scale(1.1); }
+}
+
+@keyframes jump {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-40px) scale(1.2); }
+}
+
+/* Quiz Container Adjustments */
+.quiz-container {
+  background: linear-gradient(135deg, #ec818a, #ec818a, #ec818a, #ec818a);
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  width: 90%;
+  position: relative;
+  z-index: 2;
+  margin-top: 120px; /* Increased space for quote */
+}
+
+.quiz-container h1 {
+  color: white;
+  margin-bottom: 30px;
+  font-size: 2.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.progress-bar {
+  background: rgba(255, 255, 255, 0.3);
+  height: 10px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+  overflow: hidden;
+}
+
+.progress {
+  background: #4CAF50;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.question-container {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.question-container h2 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.options {
+  display: grid;
+  gap: 15px;
+}
+
+.option-button {
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  background: #f0f0f0;
+  color: #333;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.option-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: #e0e0e0;
+}
+
+.option-button.correct {
+  background: #4CAF50;
+  color: white;
+  animation: correctAnswer 0.5s ease;
+}
+
+.option-button.wrong {
+  background: #f44336;
+  color: white;
+  animation: wrongAnswer 0.5s ease;
+}
+
+.score-display {
+  font-size: 1.2rem;
+  color: white;
+  margin: 20px 0;
+  font-weight: bold;
+}
+
+.feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px 40px;
+  border-radius: 15px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  z-index: 1000;
+  animation: popIn 0.5s ease-out;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(5px);
+}
+
+.correct-feedback {
+  background: rgba(46, 213, 115, 0.9);
+  color: white;
+  border: 3px solid #2ed573;
+}
+
+.wrong-feedback {
+  background: rgba(255, 71, 87, 0.9);
+  color: white;
+  border: 3px solid #ff4757;
+}
+
+.feedback .emoji {
+  font-size: 2rem;
+  margin-right: 10px;
+  animation: bounce 1s infinite;
+}
+
+/* Party Celebration Styles */
+.party-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.celebration-text {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: bold;
+  color: #2ed573;
+  text-shadow: 0 2px 10px rgba(46, 213, 115, 0.3);
+  animation: scaleIn 0.5s ease-out;
+  z-index: 1001;
+}
+
+.celebration-animation {
+  position: fixed;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.dancing-kids {
+  display: flex;
+  gap: 30px;
+}
+
+.kid {
+  font-size: 3rem;
+  animation: dance 1s infinite;
+}
+
+.kid1 { animation-delay: 0s; }
+.kid2 { animation-delay: 0.2s; }
+.kid3 { animation-delay: 0.4s; }
+
+.balloons {
+  display: flex;
+  gap: 20px;
+}
+
+.balloon {
+  font-size: 2rem;
+  animation: float 3s infinite;
+}
+
+.balloon1 { animation-delay: 0s; }
+.balloon2 { animation-delay: 0.5s; }
+.balloon3 { animation-delay: 1s; }
+
+.game-complete {
+  text-align: center;
+  color: white;
+}
+
+.game-complete h2 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.play-again-button {
+  background: white;
+  color: #ec818a;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 25px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.play-again-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+@keyframes correctAnswer {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wrongAnswer {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes popIn {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes dance {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-10px) rotate(5deg); }
+  75% { transform: translateY(-10px) rotate(-5deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.rocket {
+  position: fixed;
+  z-index: 1000;
+  animation: rocketTrail 2s linear;
+}
+
+.rocket-flame {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 20px;
+  background: linear-gradient(to bottom, #ff4757, transparent);
+  border-radius: 50%;
+  animation: flame 0.2s infinite;
+}
+
+@keyframes rocketTrail {
+  0% {
+    transform: translateY(0) rotate(var(--rotation));
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(var(--rotation));
+    opacity: 0;
+  }
+}
+
+@keyframes flame {
+  0%, 100% { height: 20px; }
+  50% { height: 25px; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .quote-container {
+    top: 10px;
+    padding: 10px 15px;
+    max-width: 90%;
+    margin-top: 10px;
+  }
+
+  .quote-text {
+    font-size: 1rem;
+  }
+
+  .monkey-playground {
+    width: 100px;
+  }
+
+  .monkey {
+    font-size: 2.5rem;
+  }
+
+  .quiz-container {
+    margin-top: 100px;
+  }
+
+  .batch-indicator {
+    font-size: 0.9rem;
+    padding: 4px 12px;
+  }
+
+  .quiz-container h1 {
+    font-size: 2rem;
+  }
+
+  .question-container h2 {
+    font-size: 1.2rem;
+  }
+
+  .option-button {
+    padding: 12px;
+    font-size: 1rem;
+  }
+
+  .feedback {
+    font-size: 1.2rem;
+    padding: 15px 30px;
+  }
+
+  .celebration-text {
+    font-size: 2rem;
+  }
+
+  .kid {
+    font-size: 2.5rem;
+  }
+
+  .balloon {
+    font-size: 1.8rem;
+  }
+}
