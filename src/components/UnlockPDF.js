@@ -5,7 +5,6 @@ import config from '../config';
 const UnlockPDF = () => {
   const [file, setFile] = useState(null);
   const [password, setPassword] = useState('');
-  const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -14,7 +13,6 @@ const UnlockPDF = () => {
   const resetForm = () => {
     setFile(null);
     setPassword('');
-    setFileName('');
     setError('');
     setSuccess(false);
     if (fileInputRef.current) {
@@ -26,9 +24,6 @@ const UnlockPDF = () => {
     const selectedFile = e.target.files[0];
     if (selectedFile && selectedFile.type === 'application/pdf') {
       setFile(selectedFile);
-      // Set default filename based on the uploaded file
-      const baseName = selectedFile.name.replace('.pdf', '');
-      setFileName(`${baseName}-unlocked`);
       setError('');
     } else {
       setFile(null);
@@ -38,11 +33,6 @@ const UnlockPDF = () => {
 
   const handlePasswordChange = (e) => {
     setPassword(e.target.value);
-    setError('');
-  };
-
-  const handleFileNameChange = (e) => {
-    setFileName(e.target.value);
     setError('');
   };
 
@@ -71,10 +61,6 @@ const UnlockPDF = () => {
       const response = await fetch(`${config.apiUrl}/unlock-pdf`, {
         method: 'POST',
         body: formData,
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/pdf'
-        }
       });
 
       if (!response.ok) {
@@ -95,7 +81,7 @@ const UnlockPDF = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${fileName}.pdf`;
+      link.download = `unlocked-${file.name}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -106,17 +92,16 @@ const UnlockPDF = () => {
       resetForm();
     } catch (err) {
       console.error('Error:', err);
-      setError(err.message || 'An error occurred while unlocking the PDF. Please make sure the server is running.');
+      setError(err.message || 'An error occurred while unlocking the PDF');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="unlock-pdf">
     <div className="unlock-pdf-container">
-      <h2 >Unlock PDF</h2>
       <form onSubmit={handleSubmit}>
+        <h2>Unlock PDF</h2>
         <div className="form-group">
           <label htmlFor="pdfFile">Select PDF File:</label>
           <input
@@ -129,24 +114,13 @@ const UnlockPDF = () => {
           />
         </div>
         <div className="form-group">
-          <label htmlFor="password">PDF Password :</label>
+          <label htmlFor="password">PDF Password:</label>
           <input
             type="password"
             id="password"
             value={password}
             onChange={handlePasswordChange}
             placeholder="Enter PDF password"
-          />
-          
-        </div>
-        <div className="form-group">
-          <label htmlFor="fileName">Output Filename:</label>
-          <input
-            type="text"
-            id="fileName"
-            value={fileName}
-            onChange={handleFileNameChange}
-            placeholder="Enter filename (without .pdf extension)"
             required
           />
         </div>
@@ -156,7 +130,6 @@ const UnlockPDF = () => {
       </form>
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">PDF unlocked successfully!</div>}
-    </div>
     </div>
   );
 };
