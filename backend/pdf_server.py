@@ -562,18 +562,79 @@ def compress_pdf():
         # Create output path
         output_path = os.path.join(temp_dir, f"compressed_{secure_filename(file.filename)}")
 
-        # Read the PDF
+        # Try using ghostscript for compression if available
+        try:
+            # Ghostscript compression command
+            gs_command = [
+                'gs',
+                '-sDEVICE=pdfwrite',
+                '-dCompatibilityLevel=1.4',
+                '-dPDFSETTINGS=/ebook',
+                '-dNOPAUSE',
+                '-dQUIET',
+                '-dBATCH',
+                f'-sOutputFile={output_path}',
+                input_path
+            ]
+            
+            # Run ghostscript
+            subprocess.run(gs_command, check=True)
+            
+            # Check if ghostscript compression was successful
+            if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                compressed_size_bytes = os.path.getsize(output_path)
+                compressed_size_mb = compressed_size_bytes / (1024 * 1024)
+                compression_ratio = ((original_size_bytes - compressed_size_bytes) / original_size_bytes) * 100
+                
+                # Read the compressed file
+                with open(output_path, 'rb') as f:
+                    file_data = f.read()
+                
+                # Send the compressed PDF with compression info in headers
+                response = send_file(
+                    io.BytesIO(file_data),
+                    as_attachment=True,
+                    download_name=f"compressed_{secure_filename(file.filename)}",
+                    mimetype='application/pdf',
+                    cache_timeout=0,
+                    etag=False,
+                    last_modified=None
+                )
+                
+                # Add compression info to headers
+                response.headers['X-Original-Size'] = f"{original_size_mb:.2f}"
+                response.headers['X-Compressed-Size'] = f"{compressed_size_mb:.2f}"
+                response.headers['X-Compression-Ratio'] = f"{compression_ratio:.1f}"
+                
+                return response
+        except Exception as e:
+            print(f"Ghostscript compression failed, falling back to PyPDF2: {str(e)}")
+
+        # Fallback to PyPDF2 compression
         reader = PdfReader(input_path)
         writer = PdfWriter()
 
         # Copy all pages to the writer with compression
         for page in reader.pages:
-            writer.add_page(page)
+            # Create a new page
+            new_page = writer.add_page(page)
+            
+            # Compress the page content
+            if '/Resources' in page:
+                resources = page['/Resources']
+                if '/XObject' in resources:
+                    xobjects = resources['/XObject']
+                    for key in xobjects:
+                        if xobjects[key]['/Subtype'] == '/Image':
+                            # Compress images
+                            xobjects[key]['/Filter'] = '/DCTDecode'
+                            xobjects[key]['/ColorSpace'] = '/DeviceRGB'
+                            xobjects[key]['/BitsPerComponent'] = 8
 
         # Set compression parameters
         writer.add_metadata(reader.metadata)
         
-        # Write the compressed PDF
+        # Write the compressed PDF with maximum compression
         with open(output_path, 'wb') as output_file:
             writer.write(output_file)
 
