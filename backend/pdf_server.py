@@ -534,42 +534,58 @@ def unlock_pdf():
         print(f"Error in unlock_pdf: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/compress', methods=['POST'])
-def compress_pdf():
-    temp_dir = None
-    try:
-        if 'file' not in request.files:
-            return {'error': 'No file provided'}, 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return {'error': 'No selected file'}, 400
-            
-        if not file.filename.lower().endswith('.pdf'):
-            return {'error': 'File must be a PDF'}, 400
+def compress_image(input_image, level):
+    img = Image.open(input_image)
+    output_io = io.BytesIO()
 
-        # Create a temporary directory
-        temp_dir = tempfile.mkdtemp()
-        
+    if level == 'low':
+        quality = 85
+    elif level == 'medium':
+        quality = 65
+    elif level == 'high':
+        quality = 35
+
+    img.save(output_io, format='JPEG', optimize=True, quality=quality)
+    output_io.seek(0)
+
+    return output_io
+
+def compress_pdf(input_file, level):
+    # Create a temporary directory
+    with tempfile.TemporaryDirectory() as temp_dir:
         # Save the uploaded file
-        input_path = os.path.join(temp_dir, secure_filename(file.filename))
-        file.save(input_path)
+        input_path = os.path.join(temp_dir, 'input.pdf')
+        input_file.save(input_path)
         
-        # Get original file size in bytes
-        original_size_bytes = os.path.getsize(input_path)
-        original_size_mb = original_size_bytes / (1024 * 1024)  # Convert to MB
+        # Get original size
+        original_size = os.path.getsize(input_path)
         
-        # Create output path
-        output_path = os.path.join(temp_dir, f"compressed_{secure_filename(file.filename)}")
-
-        # Try using ghostscript for compression if available
+        # Try using Ghostscript first if available
         try:
-            # Ghostscript compression command
+            output_path = os.path.join(temp_dir, 'compressed.pdf')
+            
+            # Set compression level based on user selection
+            if level == 'low':
+                dpi = 150
+            elif level == 'medium':
+                dpi = 100
+            else:  # high
+                dpi = 72
+                
             gs_command = [
-                'gs',
+                'gswin64c' if os.name == 'nt' else 'gs',
                 '-sDEVICE=pdfwrite',
                 '-dCompatibilityLevel=1.4',
-                '-dPDFSETTINGS=/ebook',
+                f'-dPDFSETTINGS=/{level}',
+                f'-dDownsampleColorImages=true',
+                f'-dDownsampleGrayImages=true',
+                f'-dDownsampleMonoImages=true',
+                f'-dColorImageDownsampleType=/Bicubic',
+                f'-dColorImageResolution={dpi}',
+                f'-dGrayImageDownsampleType=/Bicubic',
+                f'-dGrayImageResolution={dpi}',
+                f'-dMonoImageDownsampleType=/Bicubic',
+                f'-dMonoImageResolution={dpi}',
                 '-dNOPAUSE',
                 '-dQUIET',
                 '-dBATCH',
@@ -577,115 +593,68 @@ def compress_pdf():
                 input_path
             ]
             
-            # Run ghostscript
             subprocess.run(gs_command, check=True)
             
-            # Check if ghostscript compression was successful
+            # Check if compression was successful
             if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                compressed_size_bytes = os.path.getsize(output_path)
-                compressed_size_mb = compressed_size_bytes / (1024 * 1024)
-                compression_ratio = ((original_size_bytes - compressed_size_bytes) / original_size_bytes) * 100
-                
-                # Read the compressed file
                 with open(output_path, 'rb') as f:
-                    file_data = f.read()
+                    compressed_data = f.read()
+                return io.BytesIO(compressed_data)
                 
-                # Send the compressed PDF with compression info in headers
-                response = send_file(
-                    io.BytesIO(file_data),
-                    as_attachment=True,
-                    download_name=f"compressed_{secure_filename(file.filename)}",
-                    mimetype='application/pdf',
-                    cache_timeout=0,
-                    etag=False,
-                    last_modified=None
-                )
-                
-                # Add compression info to headers
-                response.headers['X-Original-Size'] = f"{original_size_mb:.2f}"
-                response.headers['X-Compressed-Size'] = f"{compressed_size_mb:.2f}"
-                response.headers['X-Compression-Ratio'] = f"{compression_ratio:.1f}"
-                
-                return response
-        except Exception as e:
-            print(f"Ghostscript compression failed, falling back to PyPDF2: {str(e)}")
-
-        # Fallback to PyPDF2 compression
+        except (subprocess.SubprocessError, FileNotFoundError):
+            # Fallback to PyPDF2 if Ghostscript fails
+            pass
+            
+        # PyPDF2 fallback
         reader = PdfReader(input_path)
         writer = PdfWriter()
-
-        # Copy all pages to the writer with compression
+        
         for page in reader.pages:
-            # Create a new page
-            new_page = writer.add_page(page)
+            writer.add_page(page)
             
-            # Compress the page content
-            if '/Resources' in page:
-                resources = page['/Resources']
-                if '/XObject' in resources:
-                    xobjects = resources['/XObject']
-                    for key in xobjects:
-                        if xobjects[key]['/Subtype'] == '/Image':
-                            # Compress images
-                            xobjects[key]['/Filter'] = '/DCTDecode'
-                            xobjects[key]['/ColorSpace'] = '/DeviceRGB'
-                            xobjects[key]['/BitsPerComponent'] = 8
-
         # Set compression parameters
         writer.add_metadata(reader.metadata)
         
-        # Write the compressed PDF with maximum compression
-        with open(output_path, 'wb') as output_file:
-            writer.write(output_file)
+        # Compress the PDF
+        output_io = io.BytesIO()
+        writer.write(output_io)
+        output_io.seek(0)
+        
+        return output_io
 
-        # Get compressed size in bytes
-        compressed_size_bytes = os.path.getsize(output_path)
-        compressed_size_mb = compressed_size_bytes / (1024 * 1024)  # Convert to MB
-
-        # Calculate compression ratio
-        compression_ratio = ((original_size_bytes - compressed_size_bytes) / original_size_bytes) * 100
-
-        # Read the compressed file
-        with open(output_path, 'rb') as f:
-            file_data = f.read()
-
-        # Clean up temporary files
-        try:
-            if os.path.exists(input_path):
-                os.unlink(input_path)
-            if os.path.exists(output_path):
-                os.unlink(output_path)
-        except Exception as e:
-            print(f"Warning: Error during cleanup: {str(e)}")
-
-        # Send the compressed PDF with compression info in headers
-        response = send_file(
-            io.BytesIO(file_data),
+@app.route('/compress', methods=['POST'])
+def compress_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+        
+    file = request.files['file']
+    compression_level = request.form.get('level', 'medium')
+    
+    if not file:
+        return jsonify({'error': 'No file uploaded'}), 400
+        
+    filename = file.filename
+    file_extension = filename.split('.')[-1].lower()
+    
+    try:
+        if file_extension in ['jpg', 'jpeg', 'png']:
+            compressed_file = compress_image(file, compression_level)
+            file_type = 'image/jpeg'
+        elif file_extension == 'pdf':
+            compressed_file = compress_pdf(file, compression_level)
+            file_type = 'application/pdf'
+        else:
+            return jsonify({'error': 'Unsupported file type'}), 400
+            
+        return send_file(
+            compressed_file,
+            mimetype=file_type,
             as_attachment=True,
-            download_name=f"compressed_{secure_filename(file.filename)}",
-            mimetype='application/pdf',
-            cache_timeout=0,
-            etag=False,
-            last_modified=None
+            download_name=filename
         )
         
-        # Add compression info to headers with proper formatting
-        response.headers['X-Original-Size'] = f"{original_size_mb:.2f}"
-        response.headers['X-Compressed-Size'] = f"{compressed_size_mb:.2f}"
-        response.headers['X-Compression-Ratio'] = f"{compression_ratio:.1f}"
-        
-        return response
-
     except Exception as e:
-        print(f"Error in compress_pdf: {str(e)}")
-        return {'error': str(e)}, 500
-    finally:
-        # Clean up the temporary directory
-        if temp_dir and os.path.exists(temp_dir):
-            try:
-                shutil.rmtree(temp_dir)
-            except Exception as e:
-                print(f"Warning: Error removing temp directory: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/test', methods=['GET'])
 def test():

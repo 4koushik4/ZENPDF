@@ -1,76 +1,81 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { FaFileUpload, FaSpinner } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import "./CompressPDF.css";
 import config from '../config';
 
 const CompressPDF = () => {
-  const [pdfFile, setPdfFile] = useState(null);
-  const [compressedPdf, setCompressedPdf] = useState(null);
+  const [file, setFile] = useState(null);
+  const [compressing, setCompressing] = useState(false);
+  const [compressionLevel, setCompressionLevel] = useState('medium');
+  const [pdfName, setPdfName] = useState("");
   const [originalSize, setOriginalSize] = useState(null);
   const [compressedSize, setCompressedSize] = useState(null);
   const [compressionRatio, setCompressionRatio] = useState(null);
-  const [pdfName, setPdfName] = useState("");
-  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressedPdf, setCompressedPdf] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Check if file is a PDF
-      if (!file.type.includes('pdf')) {
-        setError("Please upload a PDF file");
-        return;
-      }
-      // Check if file is too large (e.g., > 50MB)
-      if (file.size > 50 * 1024 * 1024) {
-        setError("File size must be less than 50MB");
-        return;
-      }
-      setPdfFile(file);
-      setPdfName(file.name.replace('.pdf', ''));
+  const onDrop = (acceptedFiles) => {
+    const selectedFile = acceptedFiles[0];
+    const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
+    
+    if (fileExtension === 'pdf' || ['jpg', 'jpeg', 'png'].includes(fileExtension)) {
+      setFile(selectedFile);
+      setPdfName(selectedFile.name.replace('.pdf', ''));
       setError(null);
       setSuccess(false);
       setCompressedPdf(null);
       setOriginalSize(null);
       setCompressedSize(null);
       setCompressionRatio(null);
+    } else {
+      toast.error('Please upload a PDF or image file (JPG, JPEG, PNG)');
     }
   };
 
-  const handleNameChange = (e) => {
-    setPdfName(e.target.value);
-  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'image/*': ['.jpg', '.jpeg', '.png']
+    },
+    multiple: false
+  });
 
-  const compressPDF = async () => {
-    if (!pdfFile) {
-      setError("Please upload a PDF file first.");
+  const handleCompress = async () => {
+    if (!file) {
+      toast.error('Please select a file first');
       return;
     }
 
-    setIsCompressing(true);
-    setError(null);
-    setSuccess(false);
+    setCompressing(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('level', compressionLevel);
 
     try {
-      const formData = new FormData();
-      formData.append('file', pdfFile);
-
-      console.log('Sending request to backend...');
       const response = await fetch(`${config.apiUrl}/compress`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Accept': 'application/pdf',
-        },
-      }).catch(err => {
-        console.error('Network error:', err);
-        throw new Error('Cannot connect to the server. Please try again later.');
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to compress PDF');
+        const error = await response.json();
+        throw new Error(error.error || 'Compression failed');
       }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `compressed_${file.name}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('File compressed successfully!');
 
       // Get compression info from headers
       const originalSize = response.headers.get('X-Original-Size');
@@ -82,19 +87,17 @@ const CompressPDF = () => {
       setCompressionRatio(compressionRatio);
 
       // Get the compressed file as a blob
-      const compressedBlob = await response.blob();
-      setCompressedPdf(URL.createObjectURL(compressedBlob));
+      setCompressedPdf(URL.createObjectURL(blob));
       setSuccess(true);
-    } catch (err) {
-      console.error('Compression error:', err);
-      setError(err.message || 'Failed to connect to the server. Please make sure the backend is running on port 5000.');
+    } catch (error) {
+      toast.error(error.message || 'Error compressing file');
     } finally {
-      setIsCompressing(false);
+      setCompressing(false);
     }
   };
 
   const resetForm = () => {
-    setPdfFile(null);
+    setFile(null);
     setCompressedPdf(null);
     setOriginalSize(null);
     setCompressedSize(null);
@@ -105,63 +108,100 @@ const CompressPDF = () => {
   };
 
   return (
-    <div className="compress-pdf">
-      <div className="compress-pdf-container">
-        <h2>Compress PDF</h2>
-        <p className="info-text">Files will be compressed to reduce size while maintaining quality</p>
-        
-        <div className="form-group">
-          <input 
-            type="file" 
-            accept="application/pdf" 
-            onChange={handleFileChange} 
-            className="file-input" 
-          />
-        </div>
-
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="Enter PDF name (e.g., myfile.pdf)"
-            value={pdfName}
-            onChange={handleNameChange}
-            className="name-input"
-          />
-        </div>
-
-        <button 
-          onClick={compressPDF} 
-          className="compress-button"
-          disabled={isCompressing || !pdfFile}
+    <div className="max-w-2xl mx-auto p-6">
+      <h2 className="text-2xl font-bold mb-6 text-center">Compress PDF or Image</h2>
+      
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Compression Level
+        </label>
+        <select
+          value={compressionLevel}
+          onChange={(e) => setCompressionLevel(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
-          {isCompressing ? 'Compressing...' : 'Compress PDF'}
-        </button>
-        
-        {error && <p className="error-message">{error}</p>}
-        
-        {success && originalSize && compressedSize && (
-          <div className="compression-info">
-            <p>Original Size: {originalSize} MB</p>
-            <p>Compressed Size: {compressedSize} MB</p>
-            <p>Compression Ratio: {compressionRatio}%</p>
-          </div>
-        )}
-        
-        {compressedPdf && (
-          <div className="download-section">
-            <a 
-              href={compressedPdf} 
-              download={`${pdfName}-compressed.pdf`} 
-              className="download-link"
-            >
-              Download Compressed PDF
-            </a>
-            <button onClick={resetForm} className="reset-button">
-              Compress Another PDF
-            </button>
+          <option value="low">Low (Better Quality)</option>
+          <option value="medium">Medium (Balanced)</option>
+          <option value="high">High (Smaller Size)</option>
+        </select>
+      </div>
+
+      <div
+        {...getRootProps()}
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+          ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-500'}`}
+      >
+        <input {...getInputProps()} />
+        <FaFileUpload className="mx-auto text-4xl text-gray-400 mb-4" />
+        {isDragActive ? (
+          <p className="text-blue-500">Drop the file here...</p>
+        ) : (
+          <div>
+            <p className="text-gray-600 mb-2">
+              Drag and drop a PDF or image file here, or click to select
+            </p>
+            <p className="text-sm text-gray-500">
+              Supported formats: PDF, JPG, JPEG, PNG
+            </p>
           </div>
         )}
       </div>
+
+      {file && (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600">
+            Selected file: <span className="font-medium">{file.name}</span>
+          </p>
+        </div>
+      )}
+
+      <button
+        onClick={handleCompress}
+        disabled={!file || compressing}
+        className={`mt-6 w-full py-3 px-4 rounded-md text-white font-medium
+          ${!file || compressing
+            ? 'bg-gray-400 cursor-not-allowed'
+            : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+      >
+        {compressing ? (
+          <span className="flex items-center justify-center">
+            <FaSpinner className="animate-spin mr-2" />
+            Compressing...
+          </span>
+        ) : (
+          'Compress File'
+        )}
+      </button>
+
+      {success && originalSize && compressedSize && (
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600">
+            Original Size: {originalSize} MB
+          </p>
+          <p className="text-sm text-gray-600">
+            Compressed Size: {compressedSize} MB
+          </p>
+          <p className="text-sm text-gray-600">
+            Compression Ratio: {compressionRatio}%
+          </p>
+        </div>
+      )}
+
+      {compressedPdf && (
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <a 
+            href={compressedPdf} 
+            download={`${pdfName}-compressed.pdf`} 
+            className="text-blue-500 hover:text-blue-700"
+          >
+            Download Compressed PDF
+          </a>
+          <button onClick={resetForm} className="text-gray-500 hover:text-gray-700 ml-2">
+            Compress Another File
+          </button>
+        </div>
+      )}
     </div>
   );
 };
