@@ -22,15 +22,10 @@ app = Flask(__name__)
 # Configure CORS
 CORS(app, resources={
     r"/*": {
-        "origins": [
-            "http://localhost:3000",  # Local development
-            "https://zen-pdf.vercel.app",  # Your Vercel frontend domain
-            "https://*.vercel.app"  # Any Vercel subdomain
-        ],
+        "origins": "*",  # Allow all origins in development
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
-        "expose_headers": ["Content-Disposition"],
-        "supports_credentials": True
+        "expose_headers": ["Content-Disposition"]
     }
 })
 
@@ -42,35 +37,50 @@ def create_watermark_pdf(watermark_type, watermark_content, output_path, font_si
         # Create a PDF with ReportLab
         c = canvas.Canvas(output_path, pagesize=letter)
         
+        # Get page dimensions
+        page_width, page_height = letter
+        
         if watermark_type == 'text':
             # Set font and color for text watermark
-            c.setFont("Helvetica", font_size)
+            c.setFont("Helvetica-Bold", font_size)
             c.setFillColorRGB(0.5, 0.5, 0.5, alpha=opacity)
             
-            # Calculate position for text
-            text_width = c.stringWidth(watermark_content, "Helvetica", font_size)
+            # Calculate text dimensions
+            text_width = c.stringWidth(watermark_content, "Helvetica-Bold", font_size)
+            text_height = font_size  # Approximate height
+            
+            # Calculate position based on the selected position
             if position == 'center':
-                x = (letter[0] - text_width) / 2
-                y = letter[1] / 2
+                x = (page_width - text_width) / 2
+                y = (page_height - text_height) / 2
             elif position == 'top-left':
                 x = 50
-                y = letter[1] - 50
+                y = page_height - 50 - text_height
             elif position == 'top-right':
-                x = letter[0] - text_width - 50
-                y = letter[1] - 50
+                x = page_width - 50 - text_width
+                y = page_height - 50 - text_height
             elif position == 'bottom-left':
                 x = 50
                 y = 50
             elif position == 'bottom-right':
-                x = letter[0] - text_width - 50
+                x = page_width - 50 - text_width
                 y = 50
             
-            # Rotate and draw text
-            c.translate(x, y)
+            # Save the current state
+            c.saveState()
+            
+            # Move to the position and rotate
+            c.translate(x + text_width/2, y + text_height/2)
             c.rotate(rotation)
-            c.drawString(0, 0, watermark_content)
-        else:
-            # Handle image watermark
+            
+            # Draw the text centered at the origin
+            c.drawString(-text_width/2, -text_height/2, watermark_content)
+            
+            # Restore the state
+            c.restoreState()
+            
+        else:  # Image watermark
+            # Open and process the image
             img = Image.open(watermark_content)
             
             # Calculate image size based on percentage
@@ -79,28 +89,42 @@ def create_watermark_pdf(watermark_type, watermark_content, output_path, font_si
             new_width = img_width * scale_factor
             new_height = img_height * scale_factor
             
-            # Calculate position for image
+            # Calculate position based on the selected position
             if position == 'center':
-                x = (letter[0] - new_width) / 2
-                y = (letter[1] - new_height) / 2
+                x = (page_width - new_width) / 2
+                y = (page_height - new_height) / 2
             elif position == 'top-left':
                 x = 50
-                y = letter[1] - new_height - 50
+                y = page_height - 50 - new_height
             elif position == 'top-right':
-                x = letter[0] - new_width - 50
-                y = letter[1] - new_height - 50
+                x = page_width - 50 - new_width
+                y = page_height - 50 - new_height
             elif position == 'bottom-left':
                 x = 50
                 y = 50
             elif position == 'bottom-right':
-                x = letter[0] - new_width - 50
+                x = page_width - 50 - new_width
                 y = 50
             
-            # Rotate and draw image
+            # Save the current state
+            c.saveState()
+            
+            # Move to the position and rotate
             c.translate(x + new_width/2, y + new_height/2)
             c.rotate(rotation)
-            c.translate(-new_width/2, -new_height/2)
-            c.drawImage(ImageReader(img), 0, 0, width=new_width, height=new_height, mask='auto')
+            
+            # Draw the image centered at the origin
+            c.drawImage(
+                ImageReader(img),
+                -new_width/2,
+                -new_height/2,
+                width=new_width,
+                height=new_height,
+                mask='auto'
+            )
+            
+            # Restore the state
+            c.restoreState()
         
         c.save()
         return True
@@ -457,17 +481,7 @@ def unlock_pdf():
                         'qwerty1234567!',
                         'qwerty12345678!',
                         'qwerty123456789!',
-                        'qwerty1234567890!',
-                        'qwertyuiop1!',
-                        'qwertyuiop12!',
-                        'qwertyuiop123!',
-                        'qwertyuiop1234!',
-                        'qwertyuiop12345!',
-                        'qwertyuiop123456!',
-                        'qwertyuiop1234567!',
-                        'qwertyuiop12345678!',
-                        'qwertyuiop123456789!',
-                        'qwertyuiop1234567890!'
+                        'qwerty1234567890!'
                     ]
                     decrypted = False
                     for pwd in common_passwords:

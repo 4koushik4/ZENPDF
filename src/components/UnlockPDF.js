@@ -61,14 +61,9 @@ const UnlockPDF = () => {
       const response = await fetch(`${config.apiUrl}/unlock-pdf`, {
         method: 'POST',
         body: formData,
-        credentials: 'include',
         headers: {
-          'Accept': 'application/pdf',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        },
-        cache: 'no-store'
+          'Accept': 'application/pdf'
+        }
       });
 
       if (!response.ok) {
@@ -113,6 +108,7 @@ const UnlockPDF = () => {
   };
 
   return (
+    <div className="unlock-pdf">
     <div className="unlock-pdf-container">
       <form onSubmit={handleSubmit}>
         <h2>Unlock PDF</h2>
@@ -143,7 +139,8 @@ const UnlockPDF = () => {
         </button>
       </form>
       {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">PDF unlocked successfully!</div>}
+        {success && <div className="success-message">PDF unlocked successfully!</div>}
+      </div>
     </div>
   );
 };

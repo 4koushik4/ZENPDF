@@ -78,14 +78,9 @@ const PasswordProtect = () => {
       const response = await fetch(`${config.apiUrl}/protect-pdf`, {
         method: 'POST',
         body: formData,
-        credentials: 'include',
         headers: {
-          'Accept': 'application/pdf',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        },
-        cache: 'no-store'
+          'Accept': 'application/pdf'
+        }
       });
 
       if (!response.ok) {
