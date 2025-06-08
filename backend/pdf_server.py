@@ -564,43 +564,22 @@ def compress_pdf():
 
         # Read the PDF
         reader = PdfReader(input_path)
-        
-        # Convert each page to image and compress
-        image_paths = []
-        for i, page in enumerate(reader.pages):
-            # Convert page to image
-            img_path = os.path.join(temp_dir, f'page_{i}.jpg')
-            image_paths.append(img_path)
-            
-            # Convert page to image using PIL
-            img = Image.new('RGB', (int(page.mediabox.width), int(page.mediabox.height)), 'white')
-            img.save(img_path, 'JPEG', quality=30, optimize=True)
+        writer = PdfWriter()
 
-        # Convert images back to PDF using img2pdf
-        with open(output_path, 'wb') as f:
-            f.write(img2pdf.convert(image_paths))
+        # Copy all pages to the writer with compression
+        for page in reader.pages:
+            writer.add_page(page)
+
+        # Set compression parameters
+        writer.add_metadata(reader.metadata)
+        
+        # Write the compressed PDF
+        with open(output_path, 'wb') as output_file:
+            writer.write(output_file)
 
         # Get compressed size in bytes
         compressed_size_bytes = os.path.getsize(output_path)
         compressed_size_mb = compressed_size_bytes / (1024 * 1024)  # Convert to MB
-
-        # If still too large, try more aggressive compression
-        max_size = 1024 * 1024  # 1MB in bytes
-        quality = 30  # Start with 30% quality
-        while compressed_size_bytes > max_size and quality > 5:
-            quality -= 5  # Reduce quality by 5% each iteration
-            
-            # Recompress images with lower quality
-            for img_path in image_paths:
-                img = Image.open(img_path)
-                img.save(img_path, 'JPEG', quality=quality, optimize=True)
-            
-            # Convert back to PDF
-            with open(output_path, 'wb') as f:
-                f.write(img2pdf.convert(image_paths))
-            
-            compressed_size_bytes = os.path.getsize(output_path)
-            compressed_size_mb = compressed_size_bytes / (1024 * 1024)  # Convert to MB
 
         # Calculate compression ratio
         compression_ratio = ((original_size_bytes - compressed_size_bytes) / original_size_bytes) * 100
@@ -615,9 +594,6 @@ def compress_pdf():
                 os.unlink(input_path)
             if os.path.exists(output_path):
                 os.unlink(output_path)
-            for img_path in image_paths:
-                if os.path.exists(img_path):
-                    os.unlink(img_path)
         except Exception as e:
             print(f"Warning: Error during cleanup: {str(e)}")
 
@@ -626,7 +602,10 @@ def compress_pdf():
             io.BytesIO(file_data),
             as_attachment=True,
             download_name=f"compressed_{secure_filename(file.filename)}",
-            mimetype='application/pdf'
+            mimetype='application/pdf',
+            cache_timeout=0,
+            etag=False,
+            last_modified=None
         )
         
         # Add compression info to headers with proper formatting
