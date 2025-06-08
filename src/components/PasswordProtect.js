@@ -80,8 +80,12 @@ const PasswordProtect = () => {
         body: formData,
         credentials: 'include',
         headers: {
-          'Accept': 'application/pdf'
-        }
+          'Accept': 'application/pdf',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        cache: 'no-store'
       });
 
       if (!response.ok) {
@@ -93,6 +97,12 @@ const PasswordProtect = () => {
           console.error('Error parsing error response:', e);
         }
         throw new Error(errorMessage);
+      }
+
+      // Check if the response is actually a PDF
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/pdf')) {
+        throw new Error('Invalid response format. Expected PDF file.');
       }
 
       // Get the protected PDF as a blob

@@ -238,7 +238,10 @@ def watermark_pdf():
             io.BytesIO(file_data),
             as_attachment=True,
             download_name=output_filename,
-            mimetype='application/pdf'
+            mimetype='application/pdf',
+            cache_timeout=0,
+            etag=False,
+            last_modified=None
         )
     
     except Exception as e:
@@ -304,7 +307,10 @@ def protect_pdf():
             temp_output.name,
             as_attachment=True,
             download_name=f"protected_{secure_filename(file.filename)}",
-            mimetype='application/pdf'
+            mimetype='application/pdf',
+            cache_timeout=0,
+            etag=False,
+            last_modified=None
         )
 
     except Exception as e:
@@ -512,7 +518,10 @@ def unlock_pdf():
                 temp_output.name,
                 as_attachment=True,
                 download_name=f'{fileName}.pdf',
-                mimetype='application/pdf'
+                mimetype='application/pdf',
+                cache_timeout=0,
+                etag=False,
+                last_modified=None
             )
 
         except Exception as e:
