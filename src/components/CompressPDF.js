@@ -14,7 +14,6 @@ const CompressPDF = () => {
   const [compressedSize, setCompressedSize] = useState(null);
   const [compressionRatio, setCompressionRatio] = useState(null);
   const [compressedPdf, setCompressedPdf] = useState(null);
-  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
   const onDrop = (acceptedFiles) => {
@@ -24,8 +23,6 @@ const CompressPDF = () => {
     if (fileExtension === 'pdf' || ['jpg', 'jpeg', 'png'].includes(fileExtension)) {
       setFile(selectedFile);
       setPdfName(selectedFile.name.replace('.pdf', ''));
-      setError(null);
-      setSuccess(false);
       setCompressedPdf(null);
       setOriginalSize(null);
       setCompressedSize(null);
@@ -103,7 +100,6 @@ const CompressPDF = () => {
     setCompressedSize(null);
     setCompressionRatio(null);
     setPdfName("");
-    setError(null);
     setSuccess(false);
   };
 
