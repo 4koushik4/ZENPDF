@@ -1,0 +1,95 @@
+.insert-blank-page-container {
+  text-align: center;
+  padding: 50px 20px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #ffdde1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.insert-blank-page-card {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(135deg, #ec818a, #ec818a, #ec818a, #ec818a);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  max-width: 700px;
+  margin: 20px auto;
+  width: 100%;
+  transition: box-shadow 0.3s, background 0.3s;
+}
+
+.insert-blank-page-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 10px 24px rgba(0, 0, 0, 0.18);
+  background: linear-gradient(135deg, #fbc2eb, #a6c1ee);
+  color: black;
+}
+
+.blank-page-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  margin: 20px 0;
+  gap: 16px;
+}
+
+.blank-page-thumbnail {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 120px;
+  margin-bottom: 4px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.blank-page-plus-btn {
+  margin: 10px 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  font-size: 24px;
+  padding: 0;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.blank-page-plus-btn.selected {
+  background: #28a745;
+}
+
+.blank-page-plus-label {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.blank-page-actions {
+  margin-top: 30px;
+}
+
+.blank-page-download-btn {
+  padding: 12px 28px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  background: #28a745;
+  color: #fff;
+  cursor: pointer;
+  margin: 0 10px;
+  transition: background 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.blank-page-download-btn:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}

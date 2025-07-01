@@ -28,6 +28,9 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import AdminFeedback from './components/AdminFeedback';
 import Contact from './components/Contact';
+import PDFPageInsert from './components/pdfpageinsert';
+import InsertBlankPage from './components/InsertBlankPage';
+import InsertPdfIntoPdf from './components/InsertPdfIntoPdf';
 
 // Create a layout component that conditionally renders the Navbar
 const Layout = ({ children }) => {
@@ -138,6 +141,21 @@ const App = () => {
           <Route path="/page-numbers" element={
             <Layout>
               <AddPageNumbers />
+            </Layout>
+          } />
+          <Route path="/pdf-page-insert" element={
+            <Layout>
+              <PDFPageInsert />
+            </Layout>
+          } />
+          <Route path="/insert-blank-page" element={
+            <Layout>
+              <InsertBlankPage />
+            </Layout>
+          } />
+          <Route path="/insert-pdf-into-pdf" element={
+            <Layout>
+              <InsertPdfIntoPdf />
             </Layout>
           } />
           <Route path="/faq" element={<FAQ />} />

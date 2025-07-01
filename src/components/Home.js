@@ -114,6 +114,10 @@ const Home = () => {
           <h2>Unlock PDF</h2>
           <p>Remove password from PDF</p>
         </Link>
+        <Link to="/pdf-page-insert" className="home-card">
+          <h2>Insert PDF</h2>
+          <p>Insert PDF into another PDF or insert a blank page</p>
+        </Link>
       </div>
 
       <footer className="footer">
