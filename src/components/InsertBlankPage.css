@@ -11,19 +11,18 @@
 
 .insert-blank-page-card {
   text-align: center;
-  padding: 30px 20px;
+  padding: 20px;
   background: linear-gradient(135deg, #ec818a, #ec818a, #ec818a, #ec818a);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  max-width: 700px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
   margin: 20px auto;
-  width: 100%;
   transition: box-shadow 0.3s, background 0.3s;
 }
 
 .insert-blank-page-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0px 10px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3);
   background: linear-gradient(135deg, #fbc2eb, #a6c1ee);
   color: black;
 }
@@ -37,16 +36,29 @@
   gap: 16px;
 }
 
-.blank-page-thumbnail {
+.pdf-thumb, .blank-thumb {
   border: 1px solid #ccc;
   border-radius: 8px;
-  width: 120px;
+  width: 100px;
+  height: 140px;
   margin-bottom: 4px;
   background: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  object-fit: contain;
 }
 
-.blank-page-plus-btn {
+.blank-thumb {
+  background: #f5f5f5;
+  border: 2px dashed #aaa;
+  color: #888;
+  font-weight: bold;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plus-btn {
   margin: 10px 0;
   width: 40px;
   height: 40px;
@@ -59,37 +71,29 @@
   font-weight: bold;
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.blank-page-plus-btn.selected {
-  background: #28a745;
+.plus-btn:hover {
+  background: #0056b3;
 }
 
-.blank-page-plus-label {
-  font-size: 12px;
-  margin-top: 2px;
-}
-
-.blank-page-actions {
-  margin-top: 30px;
-}
-
-.blank-page-download-btn {
-  padding: 12px 28px;
-  font-size: 1.1rem;
+.download-btn {
+  background-color: #17a2b8;
+  color: white;
+  margin-top: 24px;
+  padding: 12px 24px;
+  font-size: 18px;
   font-weight: bold;
   border: none;
   border-radius: 6px;
-  background: #28a745;
-  color: #fff;
   cursor: pointer;
-  margin: 0 10px;
-  transition: background 0.3s;
-  text-decoration: none;
   display: inline-block;
+  transition: background 0.3s;
 }
 
-.blank-page-download-btn:disabled {
-  background: #a0aec0;
-  cursor: not-allowed;
+.download-btn:hover {
+  background-color: #138496;
 }
