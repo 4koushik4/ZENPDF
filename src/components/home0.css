@@ -1,12 +1,18 @@
 :root {
-    --primary-bg: linear-gradient(135deg, #ff9a9e, #fad0c4, #ffdde1);
-    --footer-bg: linear-gradient(135deg, #ec818a, #ec818a);
+    --primary-bg: linear-gradient(135deg, #ff9a9e, #fad0c4);
+    --footer-bg: #ec818a;
     --text-color: #2c3e50;
     --secondary-text-color: #34495e;
     --button-bg: rgba(255, 255, 255, 0.3);
     --button-hover-bg: rgba(255, 255, 255, 0.5);
     --shadow-color: rgba(0, 0, 0, 0.1);
     --button-active-shadow: rgba(255, 255, 255, 0.8);
+    --transition-speed: 0.3s;
+}
+
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif; /* Consider using a web font */
 }
 
 .home0-container {
@@ -59,7 +65,7 @@
     background: var(--button-bg);
     border: none;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--transition-speed) ease;
     padding: 0.5rem 1rem;
     border-radius: 50%;
     backdrop-filter: blur(5px);
@@ -206,7 +212,7 @@
     padding: 0.5rem 1.2rem;
     border-radius: 20px;
     font-size: 0.9rem;
-    transition: all 0.3s ease;
+    transition: all var(--transition-speed) ease;
     cursor: pointer;
 }
 
