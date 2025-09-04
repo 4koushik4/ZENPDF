@@ -24,7 +24,11 @@ const Navbar = () => {
         {/* Left-aligned items */}
         <div className="left-items">
           <div className="logo">
-            <Link to="/">ZEN PDF</Link>
+            <Link to="/home">
+  <img src="https://postimg.cc/CdGPW42d" alt="ZEN PDF" style={{ height: "40px" }} />
+</Link>
+
+
           </div>
           <div className="fun-zone-link">
             <Link 
