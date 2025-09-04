@@ -25,7 +25,7 @@ const Navbar = () => {
         <div className="left-items">
           <div className="logo">
             <Link to="/home">
-  <img src="https://postimg.cc/CdGPW42d" alt="ZEN PDF" style={{ height: "40px" }} />
+  <img src="https://i.postimg.cc/ZYgGv7FP/hi-1.png" alt="ZEN PDF" style={{ height: "40px" }} />
 </Link>
 
 
