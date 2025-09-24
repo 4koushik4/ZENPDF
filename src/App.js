@@ -65,18 +65,9 @@ const App = () => {
               <Home />
             </Layout>
           } />
-          <Route path="/chatwithpdf" element={
-            <Layout>
-              <ChatWithPDF />
-            </Layout>
-          } />
-          <Route path="/pdfsummarizer" element={
-            <Layout>
-              <PDFSummarizer />
-            </Layout>
-          } />
-          <Route path="/converter" element={<UniversalFileConverter />} />
-
+         
+          
+         
           <Route path="/merge" element={
             <Layout>
               <MergePDF />
@@ -97,11 +88,7 @@ const App = () => {
               <SplitPDF />
             </Layout>
           } />
-          <Route path="/file-converter" element={
-            <Layout>
-              <FileConverter />
-            </Layout>
-          } />
+          
           
           <Route path="/compress" element={
             <Layout>
