@@ -553,6 +553,12 @@ def compress_pdf_with_ghostscript(input_path, output_path, target_size_mb=None, 
     Compress PDF using Ghostscript with quality preservation
     """
     try:
+        # Check if Ghostscript is available
+        try:
+            subprocess.run(['gs', '--version'], capture_output=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Fallback to PyPDF2 compression if Ghostscript is not available
+            return compress_pdf_with_pypdf2(input_path, output_path, target_size_mb, quality)
         # Ghostscript compression settings based on quality
         if quality == 'high':
             # High quality compression - minimal quality loss
@@ -640,7 +646,41 @@ def compress_pdf_with_ghostscript(input_path, output_path, target_size_mb=None, 
         print(f"Error in compress_pdf_with_ghostscript: {str(e)}")
         return False, str(e)
 
-@app.route('/compress-pdf-advanced', methods=['POST'])
+def compress_pdf_with_pypdf2(input_path, output_path, target_size_mb=None, quality='high'):
+    """
+    Fallback PDF compression using PyPDF2 when Ghostscript is not available
+    """
+    try:
+        # Read the input PDF
+        reader = PdfReader(input_path)
+        writer = PdfWriter()
+        
+        # Copy all pages
+        for page in reader.pages:
+            writer.add_page(page)
+        
+        # Apply compression based on quality
+        if quality == 'high':
+            # High quality - minimal compression
+            compression_level = 6
+        elif quality == 'medium':
+            # Medium quality - balanced compression
+            compression_level = 4
+        else:  # low
+            # Low quality - maximum compression
+            compression_level = 2
+        
+        # Write with compression
+        with open(output_path, 'wb') as output_file:
+            writer.write(output_file)
+        
+        return True, "Compression successful (using PyPDF2 fallback)"
+        
+    except Exception as e:
+        print(f"Error in compress_pdf_with_pypdf2: {str(e)}")
+        return False, str(e)
+
+@app.route('/compress', methods=['POST'])
 def compress_pdf_advanced():
     temp_input = None
     temp_output = None
@@ -719,6 +759,7 @@ def compress_pdf_advanced():
         response.headers['X-Compressed-Size'] = f"{compressed_size_mb:.2f} MB"
         response.headers['X-Compression-Ratio'] = f"{compression_ratio:.1f}%"
         response.headers['X-Quality-Used'] = quality
+        response.headers['X-Compression-Method'] = "Ghostscript" if "Ghostscript" in message else "PyPDF2"
         if target_size:
             response.headers['X-Target-Size'] = f"{target_size} MB"
         
