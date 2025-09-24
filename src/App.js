@@ -6,7 +6,6 @@ import Navbar from "./components/Navbar";
 import Home from "./components/Home";
 import MergePDF from "./components/MergePDF";
 import SplitPDF from "./components/SplitPDF";
-import CompressPDF from "./components/CompressPDF";
 import ExtractPages from "./components/ExtractPages";
 import ImageToPDF from "./components/ImageToPDF";
 import WatermarkPDF from "./components/WatermarkPDF";
@@ -31,6 +30,8 @@ import Contact from './components/Contact';
 import PDFPageInsert from './components/pdfpageinsert';
 import InsertBlankPage from './components/InsertBlankPage';
 import InsertPdfIntoPdf from './components/InsertPdfIntoPdf';
+import AdvancedCompressPDF from './components/AdvancedCompressPDF';
+
 
 // Create a layout component that conditionally renders the Navbar
 const Layout = ({ children }) => {
@@ -50,6 +51,7 @@ const Layout = ({ children }) => {
 const App = () => {
   return (
     <Router>
+      
       <div className="App">
         <ToastContainer position="top-right" autoClose={3000} />
         <Routes>
@@ -63,6 +65,18 @@ const App = () => {
               <Home />
             </Layout>
           } />
+          <Route path="/chatwithpdf" element={
+            <Layout>
+              <ChatWithPDF />
+            </Layout>
+          } />
+          <Route path="/pdfsummarizer" element={
+            <Layout>
+              <PDFSummarizer />
+            </Layout>
+          } />
+          <Route path="/converter" element={<UniversalFileConverter />} />
+
           <Route path="/merge" element={
             <Layout>
               <MergePDF />
@@ -83,9 +97,15 @@ const App = () => {
               <SplitPDF />
             </Layout>
           } />
+          <Route path="/file-converter" element={
+            <Layout>
+              <FileConverter />
+            </Layout>
+          } />
+          
           <Route path="/compress" element={
             <Layout>
-              <CompressPDF />
+              <AdvancedCompressPDF />
             </Layout>
           } />
           <Route path="/extract-pages" element={
@@ -164,8 +184,11 @@ const App = () => {
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
+          
+         
           {/* Redirect all unknown routes to Home Page */}
           <Route path="*" element={<Navigate to="/" replace />} />
+          
         </Routes>
       </div>
     </Router>
