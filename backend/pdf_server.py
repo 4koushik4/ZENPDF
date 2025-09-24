@@ -263,7 +263,7 @@ def watermark_pdf():
             as_attachment=True,
             download_name=output_filename,
             mimetype='application/pdf',
-            cache_timeout=0,
+            max_age=0,
             etag=False,
             last_modified=None
         )
@@ -332,7 +332,7 @@ def protect_pdf():
             as_attachment=True,
             download_name=f"protected_{secure_filename(file.filename)}",
             mimetype='application/pdf',
-            cache_timeout=0,
+            max_age=0,
             etag=False,
             last_modified=None
         )
@@ -533,7 +533,7 @@ def unlock_pdf():
                 as_attachment=True,
                 download_name=f'{fileName}.pdf',
                 mimetype='application/pdf',
-                cache_timeout=0,
+                max_age=0,
                 etag=False,
                 last_modified=None
             )
