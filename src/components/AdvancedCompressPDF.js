@@ -51,7 +51,7 @@ const AdvancedCompressPDF = () => {
       }
 
       console.log('Sending request to compress PDF...');
-      const response = await fetch(`${config.apiUrl}/compress-pdf-advanced`, {
+      const response = await fetch(`${config.apiUrl}/compress`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -298,3 +298,4 @@ const AdvancedCompressPDF = () => {
 };
 
 export default AdvancedCompressPDF;
+
