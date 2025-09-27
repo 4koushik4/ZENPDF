@@ -4,6 +4,10 @@ const config = {
     },
     production: {
         apiUrl: 'https://zen-pdf-backend-izaa.onrender.com'  // Your Render backend URL
+        pdfApiUrl: 'https://pdf-compressor-backend-q3uv.onrender.com'
+
+
+
     }
 };
 
