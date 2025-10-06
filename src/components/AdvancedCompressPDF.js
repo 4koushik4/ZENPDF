@@ -45,12 +45,13 @@ const AdvancedCompressPDF = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('quality', quality);
-      if (useTargetSize) formData.append('targetSizeMB', targetSize);
+      if (useTargetSize) {
+        formData.append('targetSizeMB', targetSize);
+      }
 
-      console.log('Sending request to compress PDF...');
       const response = await fetch(`${config.pdfApiUrl}/compress`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       if (!response.ok) {
@@ -58,26 +59,30 @@ const AdvancedCompressPDF = () => {
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
-        } catch {}
+        } catch (e) {}
         throw new Error(errorMessage);
       }
 
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/pdf')) {
+        throw new Error('Invalid response format. Expected PDF file.');
+      }
+
       // Get compression info from headers
-      const originalSize = response.headers.get('X-Original-Size');
-      const compressedSize = response.headers.get('X-Compressed-Size');
+      const originalSize = parseFloat(response.headers.get('X-Original-Size')) / (1024 * 1024);
+      const compressedSize = parseFloat(response.headers.get('X-Compressed-Size')) / (1024 * 1024);
       const compressionRatio = response.headers.get('X-Compression-Ratio');
       const qualityUsed = response.headers.get('X-Quality-Used');
       const targetSizeUsed = response.headers.get('X-Target-Size');
 
       setCompressionResults({
-        originalSize: (originalSize / (1024 * 1024)).toFixed(2) + ' MB',
-        compressedSize: (compressedSize / (1024 * 1024)).toFixed(2) + ' MB',
+        originalSize: originalSize.toFixed(2) + ' MB',
+        compressedSize: compressedSize.toFixed(2) + ' MB',
         compressionRatio,
         qualityUsed,
-        targetSizeUsed
+        targetSizeUsed: targetSizeUsed ? targetSizeUsed + ' MB' : null
       });
 
-      // Get the compressed PDF as blob
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       setCompressedPdf(url);
@@ -113,50 +118,171 @@ const AdvancedCompressPDF = () => {
 
   const getQualityDescription = (quality) => {
     switch (quality) {
-      case 'high': return 'Minimal quality loss, best for printing and professional use';
-      case 'medium': return 'Balanced compression, good for general use and sharing';
-      case 'low': return 'Maximum compression, suitable for web viewing and email';
-      default: return '';
+      case 'high':
+        return 'Minimal quality loss, best for printing and professional use';
+      case 'medium':
+        return 'Balanced compression, good for general use and sharing';
+      case 'low':
+        return 'Maximum compression, suitable for web viewing and email';
+      default:
+        return '';
     }
   };
 
   return (
     <div className="advanced-compress-container">
-      {/* Upload & Settings */}
+      <div className="advanced-compress-header">
+        <h1>Advanced PDF Compressor</h1>
+        <p>Compress your PDFs with quality control and size targeting using Ghostscript</p>
+      </div>
+
       <div className="upload-section">
-        <input type="file" accept=".pdf" onChange={handleFileChange} />
+        <h3>Select PDF File</h3>
+        <div className="file-upload-area">
+          <input
+            type="file"
+            id="pdfFile"
+            accept=".pdf"
+            onChange={handleFileChange}
+            className="file-input"
+          />
+          <label htmlFor="pdfFile" className="file-upload-label">
+            <FaFileUpload className="upload-icon" />
+            <span>Choose PDF File or Drag & Drop</span>
+          </label>
+        </div>
+        {file && (
+          <div className="file-info">
+            <p><strong>Selected:</strong> {file.name}</p>
+            <p><strong>Size:</strong> {(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+          </div>
+        )}
       </div>
+
       <div className="compression-settings">
-        <select value={quality} onChange={e => setQuality(e.target.value)}>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-        <input type="checkbox" checked={useTargetSize} onChange={e => setUseTargetSize(e.target.checked)} />
-        {useTargetSize && <input type="number" value={targetSize} onChange={e => setTargetSize(e.target.value)} />}
+        <h3>Compression Settings</h3>
+
+        <div className="setting-group">
+          <label htmlFor="quality">Quality Level:</label>
+          <select
+            id="quality"
+            value={quality}
+            onChange={(e) => setQuality(e.target.value)}
+            className="quality-select"
+          >
+            <option value="high">High Quality (Minimal Loss)</option>
+            <option value="medium">Medium Quality (Balanced)</option>
+            <option value="low">Low Quality (Maximum Compression)</option>
+          </select>
+          <div className="quality-description">
+            <FaInfoCircle className="info-icon" />
+            {getQualityDescription(quality)}
+          </div>
+        </div>
+
+        <div className="setting-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={useTargetSize}
+              onChange={(e) => setUseTargetSize(e.target.checked)}
+            />
+            <span>Set target file size</span>
+          </label>
+
+          {useTargetSize && (
+            <div className="target-size-input">
+              <input
+                type="number"
+                value={targetSize}
+                onChange={(e) => setTargetSize(e.target.value)}
+                placeholder="Enter target size in MB"
+                min="0.1"
+                step="0.1"
+                className="size-input"
+              />
+              <span className="size-unit">MB</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Actions */}
-      <button onClick={handleCompress} disabled={!file || compressing}>
-        {compressing ? 'Compressing...' : 'Compress PDF'}
-      </button>
-      <button onClick={resetForm}>Reset</button>
+      <div className="action-buttons">
+        <button
+          onClick={handleCompress}
+          disabled={!file || compressing}
+          className={`compress-btn ${!file || compressing ? 'disabled' : ''}`}
+        >
+          {compressing ? (
+            <>
+              <FaSpinner className="spinner" />
+              Compressing...
+            </>
+          ) : (
+            'Compress PDF'
+          )}
+        </button>
 
-      {/* Compression Results */}
+        <button
+          onClick={resetForm}
+          className="reset-btn"
+        >
+          Reset
+        </button>
+      </div>
+
       {compressionResults && (
         <div className="compression-results">
-          <p>Original Size: {compressionResults.originalSize}</p>
-          <p>Compressed Size: {compressionResults.compressedSize}</p>
-          <p>Compression Ratio: {compressionResults.compressionRatio}</p>
-          <p>Quality Used: {compressionResults.qualityUsed}</p>
-          {compressionResults.targetSizeUsed && <p>Target Size: {compressionResults.targetSizeUsed} MB</p>}
+          <h3>Compression Results</h3>
+          <div className="results-grid">
+            <div className="result-item">
+              <span className="result-label">Original Size:</span>
+              <span className="result-value">{compressionResults.originalSize}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Compressed Size:</span>
+              <span className="result-value success">{compressionResults.compressedSize}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Compression Ratio:</span>
+              <span className="result-value success">{compressionResults.compressionRatio}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Quality Used:</span>
+              <span className="result-value">{compressionResults.qualityUsed}</span>
+            </div>
+            {compressionResults.targetSizeUsed && (
+              <div className="result-item">
+                <span className="result-label">Target Size:</span>
+                <span className="result-value">{compressionResults.targetSizeUsed}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Download */}
       {compressedPdf && (
-        <button onClick={downloadCompressedPdf}>Download Compressed PDF</button>
+        <div className="download-section">
+          <h3>Download Compressed PDF</h3>
+          <button
+            onClick={downloadCompressedPdf}
+            className="download-btn"
+          >
+            <FaDownload className="download-icon" /> Download Compressed PDF
+          </button>
+        </div>
       )}
+
+      <div className="info-section">
+        <h4>How Advanced Compression Works</h4>
+        <ul>
+          <li><strong>High Quality:</strong> Maintains 300 DPI resolution, best for printing and professional documents</li>
+          <li><strong>Medium Quality:</strong> Uses 200 DPI resolution, perfect for general use and sharing</li>
+          <li><strong>Low Quality:</strong> Uses 150 DPI resolution, ideal for web viewing and email attachments</li>
+          <li><strong>Target Size:</strong> Automatically adjusts quality to meet your specified file size</li>
+          <li><strong>Smart Compression:</strong> Uses Ghostscript for professional-grade PDF optimization</li>
+        </ul>
+      </div>
     </div>
   );
 };
