@@ -54,30 +54,22 @@ const AdvancedCompressPDF = () => {
         body: formData,
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        let errorMessage = 'Failed to compress PDF';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {}
-        throw new Error(errorMessage);
+        throw new Error(responseData.error || 'Failed to compress PDF');
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/pdf')) {
-        throw new Error('Invalid response format. Expected PDF file.');
+      if (!responseData.success) {
+        throw new Error('Compression failed');
       }
 
-      // Get compression metadata from header
-      const metadataHeader = response.headers.get('X-Compression-Metadata');
+      // Get metadata from JSON response
+      const metadata = responseData.metadata;
       
-      if (!metadataHeader) {
+      if (!metadata) {
         throw new Error('No compression metadata received');
       }
-
-      // Decode base64 metadata
-      const metadataJson = atob(metadataHeader);
-      const metadata = JSON.parse(metadataJson);
 
       // Convert bytes to MB
       const originalSizeMB = metadata.originalSize / (1024 * 1024);
@@ -91,7 +83,15 @@ const AdvancedCompressPDF = () => {
         targetSizeUsed: metadata.targetSizeUsed ? metadata.targetSizeUsed + ' MB' : null
       });
 
-      const blob = await response.blob();
+      // Convert base64 file data to blob
+      const byteCharacters = atob(responseData.fileData);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
       const url = window.URL.createObjectURL(blob);
       setCompressedPdf(url);
 
@@ -122,6 +122,12 @@ const AdvancedCompressPDF = () => {
     setTargetSize('');
     setUseTargetSize(false);
     setQuality('high');
+    
+    // Reset file input
+    const fileInput = document.getElementById('pdfFile');
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   const getQualityDescription = (quality) => {
