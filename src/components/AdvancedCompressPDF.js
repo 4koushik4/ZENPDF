@@ -68,16 +68,21 @@ const AdvancedCompressPDF = () => {
         throw new Error('Invalid response format. Expected PDF file.');
       }
 
-      // Get compression info from headers
-      const originalSize = parseFloat(response.headers.get('X-Original-Size')) / (1024 * 1024);
-      const compressedSize = parseFloat(response.headers.get('X-Compressed-Size')) / (1024 * 1024);
+      // Get compression info from headers and convert bytes to MB
+      const originalSizeBytes = parseFloat(response.headers.get('X-Original-Size'));
+      const compressedSizeBytes = parseFloat(response.headers.get('X-Compressed-Size'));
+      
+      // Convert bytes to MB and format
+      const originalSizeMB = originalSizeBytes / (1024 * 1024);
+      const compressedSizeMB = compressedSizeBytes / (1024 * 1024);
+      
       const compressionRatio = response.headers.get('X-Compression-Ratio');
       const qualityUsed = response.headers.get('X-Quality-Used');
       const targetSizeUsed = response.headers.get('X-Target-Size');
 
       setCompressionResults({
-        originalSize: originalSize.toFixed(2) + ' MB',
-        compressedSize: compressedSize.toFixed(2) + ' MB',
+        originalSize: originalSizeMB.toFixed(2) + ' MB',
+        compressedSize: compressedSizeMB.toFixed(2) + ' MB',
         compressionRatio,
         qualityUsed,
         targetSizeUsed: targetSizeUsed ? targetSizeUsed + ' MB' : null
