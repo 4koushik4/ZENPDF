@@ -45,7 +45,6 @@ const AdvancedCompressPDF = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('quality', quality);
-
       if (useTargetSize) {
         formData.append('targetSizeMB', targetSize);
       }
@@ -67,29 +66,18 @@ const AdvancedCompressPDF = () => {
         throw new Error(errorMessage);
       }
 
-      // Check if the response is actually a PDF
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/pdf')) {
-        throw new Error('Invalid response format. Expected PDF file.');
-      }
-
-      // Get compression info from headers
-      const originalSize = response.headers.get('X-Original-Size');
-      const compressedSize = response.headers.get('X-Compressed-Size');
-      const compressionRatio = response.headers.get('X-Compression-Ratio');
-      const qualityUsed = response.headers.get('X-Quality-Used');
-      const targetSizeUsed = response.headers.get('X-Target-Size');
+      const data = await response.json();
 
       setCompressionResults({
-        originalSize,
-        compressedSize,
-        compressionRatio,
-        qualityUsed,
-        targetSizeUsed,
+        originalSize: (data.originalSize / (1024 * 1024)).toFixed(2) + ' MB',
+        compressedSize: (data.compressedSize / (1024 * 1024)).toFixed(2) + ' MB',
+        compressionRatio: data.compressionRatio,
+        qualityUsed: data.qualityUsed,
       });
 
-      // Get the compressed PDF as a blob
-      const blob = await response.blob();
+      // Convert PDF hex string back to Blob
+      const pdfBytes = new Uint8Array(data.pdfData.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       setCompressedPdf(url);
 
@@ -135,19 +123,6 @@ const AdvancedCompressPDF = () => {
     }
   };
 
-  // Utility functions for formatting results
-  const formatBytes = (bytes) => {
-    if (!bytes) return '-';
-    const mb = parseFloat(bytes) / (1024 * 1024);
-    return `${mb.toFixed(2)} MB`;
-  };
-
-  const formatRatio = (ratio) => {
-    if (!ratio) return '-';
-    const percent = (parseFloat(ratio) * 100).toFixed(2);
-    return `${percent}%`;
-  };
-
   return (
     <div className="advanced-compress-container">
       <div className="advanced-compress-header">
@@ -180,7 +155,6 @@ const AdvancedCompressPDF = () => {
 
       <div className="compression-settings">
         <h3>Compression Settings</h3>
-
         <div className="setting-group">
           <label htmlFor="quality">Quality Level:</label>
           <select
@@ -242,12 +216,7 @@ const AdvancedCompressPDF = () => {
           )}
         </button>
 
-        <button
-          onClick={resetForm}
-          className="reset-btn"
-        >
-          Reset
-        </button>
+        <button onClick={resetForm} className="reset-btn">Reset</button>
       </div>
 
       {compressionResults && (
@@ -256,26 +225,20 @@ const AdvancedCompressPDF = () => {
           <div className="results-grid">
             <div className="result-item">
               <span className="result-label">Original Size:</span>
-              <span className="result-value">{formatBytes(compressionResults.originalSize)}</span>
+              <span className="result-value">{compressionResults.originalSize}</span>
             </div>
             <div className="result-item">
               <span className="result-label">Compressed Size:</span>
-              <span className="result-value success">{formatBytes(compressionResults.compressedSize)}</span>
+              <span className="result-value success">{compressionResults.compressedSize}</span>
             </div>
             <div className="result-item">
               <span className="result-label">Compression Ratio:</span>
-              <span className="result-value success">{formatRatio(compressionResults.compressionRatio)}</span>
+              <span className="result-value success">{compressionResults.compressionRatio}</span>
             </div>
             <div className="result-item">
               <span className="result-label">Quality Used:</span>
               <span className="result-value">{compressionResults.qualityUsed}</span>
             </div>
-            {compressionResults.targetSizeUsed && (
-              <div className="result-item">
-                <span className="result-label">Target Size:</span>
-                <span className="result-value">{compressionResults.targetSizeUsed} MB</span>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -283,26 +246,12 @@ const AdvancedCompressPDF = () => {
       {compressedPdf && (
         <div className="download-section">
           <h3>Download Compressed PDF</h3>
-          <button
-            onClick={downloadCompressedPdf}
-            className="download-btn"
-          >
+          <button onClick={downloadCompressedPdf} className="download-btn">
             <FaDownload className="download-icon" />
             Download Compressed PDF
           </button>
         </div>
       )}
-
-      <div className="info-section">
-        <h4>How Advanced Compression Works</h4>
-        <ul>
-          <li><strong>High Quality:</strong> Maintains 300 DPI resolution, best for printing and professional documents</li>
-          <li><strong>Medium Quality:</strong> Uses 200 DPI resolution, perfect for general use and sharing</li>
-          <li><strong>Low Quality:</strong> Uses 150 DPI resolution, ideal for web viewing and email attachments</li>
-          <li><strong>Target Size:</strong> Automatically adjusts quality to meet your specified file size</li>
-          <li><strong>Smart Compression:</strong> Uses Ghostscript for professional-grade PDF optimization</li>
-        </ul>
-      </div>
     </div>
   );
 };
