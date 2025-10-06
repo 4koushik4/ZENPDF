@@ -68,24 +68,27 @@ const AdvancedCompressPDF = () => {
         throw new Error('Invalid response format. Expected PDF file.');
       }
 
-      // Get compression info from headers and convert bytes to MB
-      const originalSizeBytes = parseFloat(response.headers.get('X-Original-Size'));
-      const compressedSizeBytes = parseFloat(response.headers.get('X-Compressed-Size'));
+      // Get compression metadata from header
+      const metadataHeader = response.headers.get('X-Compression-Metadata');
       
-      // Convert bytes to MB and format
-      const originalSizeMB = originalSizeBytes / (1024 * 1024);
-      const compressedSizeMB = compressedSizeBytes / (1024 * 1024);
-      
-      const compressionRatio = response.headers.get('X-Compression-Ratio');
-      const qualityUsed = response.headers.get('X-Quality-Used');
-      const targetSizeUsed = response.headers.get('X-Target-Size');
+      if (!metadataHeader) {
+        throw new Error('No compression metadata received');
+      }
+
+      // Decode base64 metadata
+      const metadataJson = atob(metadataHeader);
+      const metadata = JSON.parse(metadataJson);
+
+      // Convert bytes to MB
+      const originalSizeMB = metadata.originalSize / (1024 * 1024);
+      const compressedSizeMB = metadata.compressedSize / (1024 * 1024);
 
       setCompressionResults({
         originalSize: originalSizeMB.toFixed(2) + ' MB',
         compressedSize: compressedSizeMB.toFixed(2) + ' MB',
-        compressionRatio,
-        qualityUsed,
-        targetSizeUsed: targetSizeUsed ? targetSizeUsed + ' MB' : null
+        compressionRatio: metadata.compressionRatio,
+        qualityUsed: metadata.qualityUsed,
+        targetSizeUsed: metadata.targetSizeUsed ? metadata.targetSizeUsed + ' MB' : null
       });
 
       const blob = await response.blob();
