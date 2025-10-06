@@ -45,7 +45,7 @@ const AdvancedCompressPDF = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('quality', quality);
-      
+
       if (useTargetSize) {
         formData.append('targetSizeMB', targetSize);
       }
@@ -54,10 +54,6 @@ const AdvancedCompressPDF = () => {
       const response = await fetch(`${config.pdfApiUrl}/compress`, {
         method: 'POST',
         body: formData,
-       
-
-
-
       });
 
       if (!response.ok) {
@@ -89,7 +85,7 @@ const AdvancedCompressPDF = () => {
         compressedSize,
         compressionRatio,
         qualityUsed,
-        targetSizeUsed
+        targetSizeUsed,
       });
 
       // Get the compressed PDF as a blob
@@ -139,6 +135,19 @@ const AdvancedCompressPDF = () => {
     }
   };
 
+  // Utility functions for formatting results
+  const formatBytes = (bytes) => {
+    if (!bytes) return '-';
+    const mb = parseFloat(bytes) / (1024 * 1024);
+    return `${mb.toFixed(2)} MB`;
+  };
+
+  const formatRatio = (ratio) => {
+    if (!ratio) return '-';
+    const percent = (parseFloat(ratio) * 100).toFixed(2);
+    return `${percent}%`;
+  };
+
   return (
     <div className="advanced-compress-container">
       <div className="advanced-compress-header">
@@ -171,7 +180,7 @@ const AdvancedCompressPDF = () => {
 
       <div className="compression-settings">
         <h3>Compression Settings</h3>
-        
+
         <div className="setting-group">
           <label htmlFor="quality">Quality Level:</label>
           <select
@@ -199,7 +208,7 @@ const AdvancedCompressPDF = () => {
             />
             <span>Set target file size</span>
           </label>
-          
+
           {useTargetSize && (
             <div className="target-size-input">
               <input
@@ -232,7 +241,7 @@ const AdvancedCompressPDF = () => {
             'Compress PDF'
           )}
         </button>
-        
+
         <button
           onClick={resetForm}
           className="reset-btn"
@@ -247,15 +256,15 @@ const AdvancedCompressPDF = () => {
           <div className="results-grid">
             <div className="result-item">
               <span className="result-label">Original Size:</span>
-              <span className="result-value">{compressionResults.originalSize}</span>
+              <span className="result-value">{formatBytes(compressionResults.originalSize)}</span>
             </div>
             <div className="result-item">
               <span className="result-label">Compressed Size:</span>
-              <span className="result-value success">{compressionResults.compressedSize}</span>
+              <span className="result-value success">{formatBytes(compressionResults.compressedSize)}</span>
             </div>
             <div className="result-item">
               <span className="result-label">Compression Ratio:</span>
-              <span className="result-value success">{compressionResults.compressionRatio}</span>
+              <span className="result-value success">{formatRatio(compressionResults.compressionRatio)}</span>
             </div>
             <div className="result-item">
               <span className="result-label">Quality Used:</span>
@@ -299,6 +308,3 @@ const AdvancedCompressPDF = () => {
 };
 
 export default AdvancedCompressPDF;
-
-
-
