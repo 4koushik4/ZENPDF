@@ -69,19 +69,24 @@ const AdvancedCompressPDF = () => {
       }
 
       // Get compression info from headers
-      const originalSize = parseFloat(response.headers.get('X-Original-Size')) / (1024 * 1024);
-      const compressedSize = parseFloat(response.headers.get('X-Compressed-Size')) / (1024 * 1024);
-      const compressionRatio = response.headers.get('X-Compression-Ratio');
-      const qualityUsed = response.headers.get('X-Quality-Used');
-      const targetSizeUsed = response.headers.get('X-Target-Size');
+const originalSizeBytes = response.headers.get('X-Original-Size');
+const compressedSizeBytes = response.headers.get('X-Compressed-Size');
+const compressionRatio = response.headers.get('X-Compression-Ratio');
+const qualityUsed = response.headers.get('X-Quality-Used');
+const targetSizeUsed = response.headers.get('X-Target-Size');
 
-      setCompressionResults({
-        originalSize: originalSize.toFixed(2) + ' MB',
-        compressedSize: compressedSize.toFixed(2) + ' MB',
-        compressionRatio,
-        qualityUsed,
-        targetSizeUsed: targetSizeUsed ? targetSizeUsed + ' MB' : null
-      });
+const originalSize = originalSizeBytes ? (parseFloat(originalSizeBytes) / (1024 * 1024)).toFixed(2) + ' MB' : '-';
+const compressedSize = compressedSizeBytes ? (parseFloat(compressedSizeBytes) / (1024 * 1024)).toFixed(2) + ' MB' : '-';
+
+setCompressionResults({
+  originalSize,
+  compressedSize,
+  compressionRatio: compressionRatio || '-',
+  qualityUsed: qualityUsed || '-',
+  targetSizeUsed: targetSizeUsed ? targetSizeUsed + ' MB' : null
+});
+
+
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -288,3 +293,4 @@ const AdvancedCompressPDF = () => {
 };
 
 export default AdvancedCompressPDF;
+
