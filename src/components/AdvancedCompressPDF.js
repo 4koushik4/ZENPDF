@@ -51,7 +51,7 @@ const AdvancedCompressPDF = () => {
 
       const response = await fetch(`${config.pdfApiUrl}/compress`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       if (!response.ok) {
@@ -63,37 +63,33 @@ const AdvancedCompressPDF = () => {
         throw new Error(errorMessage);
       }
 
-      // Check if response is PDF
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/pdf')) {
         throw new Error('Invalid response format. Expected PDF file.');
       }
 
       // Get compression info from headers
-      const originalSizeBytes = response.headers.get('X-Original-Size');
-      const compressedSizeBytes = response.headers.get('X-Compressed-Size');
+      const originalSize = parseFloat(response.headers.get('X-Original-Size')) / (1024 * 1024);
+      const compressedSize = parseFloat(response.headers.get('X-Compressed-Size')) / (1024 * 1024);
       const compressionRatio = response.headers.get('X-Compression-Ratio');
       const qualityUsed = response.headers.get('X-Quality-Used');
       const targetSizeUsed = response.headers.get('X-Target-Size');
 
-      const originalSize = originalSizeBytes ? (parseFloat(originalSizeBytes) / (1024 * 1024)).toFixed(2) + ' MB' : '-';
-      const compressedSize = compressedSizeBytes ? (parseFloat(compressedSizeBytes) / (1024 * 1024)).toFixed(2) + ' MB' : '-';
-
       setCompressionResults({
-        originalSize,
-        compressedSize,
-        compressionRatio: compressionRatio || '-',
-        qualityUsed: qualityUsed || '-',
+        originalSize: originalSize.toFixed(2) + ' MB',
+        compressedSize: compressedSize.toFixed(2) + ' MB',
+        compressionRatio,
+        qualityUsed,
         targetSizeUsed: targetSizeUsed ? targetSizeUsed + ' MB' : null
       });
 
-      // Get the compressed PDF as a blob
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       setCompressedPdf(url);
 
       toast.success('PDF compressed successfully!');
     } catch (error) {
+      console.error('Error:', error);
       toast.error(error.message || 'An error occurred while compressing the PDF');
     } finally {
       setCompressing(false);
@@ -227,7 +223,10 @@ const AdvancedCompressPDF = () => {
           )}
         </button>
 
-        <button onClick={resetForm} className="reset-btn">
+        <button
+          onClick={resetForm}
+          className="reset-btn"
+        >
           Reset
         </button>
       </div>
@@ -265,9 +264,11 @@ const AdvancedCompressPDF = () => {
       {compressedPdf && (
         <div className="download-section">
           <h3>Download Compressed PDF</h3>
-          <button onClick={downloadCompressedPdf} className="download-btn">
-            <FaDownload className="download-icon" />
-            Download Compressed PDF
+          <button
+            onClick={downloadCompressedPdf}
+            className="download-btn"
+          >
+            <FaDownload className="download-icon" /> Download Compressed PDF
           </button>
         </div>
       )}
