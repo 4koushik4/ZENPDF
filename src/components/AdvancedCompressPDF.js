@@ -26,6 +26,18 @@ const AdvancedCompressPDF = () => {
     }
   };
 
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 MB';
+    const mb = bytes / (1024 * 1024);
+    return mb.toFixed(2) + ' MB';
+  };
+
+  const calculateCompressionRatio = (originalSize, compressedSize) => {
+    if (originalSize === 0) return '0%';
+    const ratio = ((originalSize - compressedSize) / originalSize) * 100;
+    return ratio.toFixed(1) + '%';
+  };
+
   const handleCompress = async () => {
     if (!file) {
       toast.error('Please select a PDF file first');
@@ -45,6 +57,7 @@ const AdvancedCompressPDF = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('quality', quality);
+      
       if (useTargetSize) {
         formData.append('targetSizeMB', targetSize);
       }
@@ -68,27 +81,45 @@ const AdvancedCompressPDF = () => {
         throw new Error('Invalid response format. Expected PDF file.');
       }
 
-      // Get compression info from headers
-const originalSizeBytes = response.headers.get('X-Original-Size');
-const compressedSizeBytes = response.headers.get('X-Compressed-Size');
-const compressionRatio = response.headers.get('X-Compression-Ratio');
-const qualityUsed = response.headers.get('X-Quality-Used');
-const targetSizeUsed = response.headers.get('X-Target-Size');
-
-const originalSize = originalSizeBytes ? (parseFloat(originalSizeBytes) / (1024 * 1024)).toFixed(2) + ' MB' : '-';
-const compressedSize = compressedSizeBytes ? (parseFloat(compressedSizeBytes) / (1024 * 1024)).toFixed(2) + ' MB' : '-';
-
-setCompressionResults({
-  originalSize,
-  compressedSize,
-  compressionRatio: compressionRatio || '-',
-  qualityUsed: qualityUsed || '-',
-  targetSizeUsed: targetSizeUsed ? targetSizeUsed + ' MB' : null
-});
-
-
-
+      // Get the response blob first
       const blob = await response.blob();
+      
+      // Calculate original file size
+      const originalSizeBytes = file.size;
+      const compressedSizeBytes = blob.size;
+      
+      // Try to get values from headers first, fallback to calculated values
+      const headerOriginalSize = response.headers.get('X-Original-Size');
+      const headerCompressedSize = response.headers.get('X-Compressed-Size');
+      const headerCompressionRatio = response.headers.get('X-Compression-Ratio');
+      const headerQualityUsed = response.headers.get('X-Quality-Used');
+      const headerTargetSize = response.headers.get('X-Target-Size');
+
+      // Use header values if available, otherwise calculate dynamically
+      const finalOriginalSize = headerOriginalSize ? 
+        (parseFloat(headerOriginalSize) / (1024 * 1024)).toFixed(2) + ' MB' : 
+        formatFileSize(originalSizeBytes);
+
+      const finalCompressedSize = headerCompressedSize ? 
+        (parseFloat(headerCompressedSize) / (1024 * 1024)).toFixed(2) + ' MB' : 
+        formatFileSize(compressedSizeBytes);
+
+      const finalCompressionRatio = headerCompressionRatio || 
+        calculateCompressionRatio(originalSizeBytes, compressedSizeBytes);
+
+      const finalQualityUsed = headerQualityUsed || quality.charAt(0).toUpperCase() + quality.slice(1);
+
+      // Set compression results with dynamic values
+      setCompressionResults({
+        originalSize: finalOriginalSize,
+        compressedSize: finalCompressedSize,
+        compressionRatio: finalCompressionRatio,
+        qualityUsed: finalQualityUsed,
+        targetSizeUsed: useTargetSize && targetSize ? targetSize + ' MB' : 
+          (headerTargetSize ? headerTargetSize + ' MB' : null)
+      });
+
+      // Create blob URL for download
       const url = window.URL.createObjectURL(blob);
       setCompressedPdf(url);
 
@@ -166,7 +197,6 @@ setCompressionResults({
 
       <div className="compression-settings">
         <h3>Compression Settings</h3>
-
         <div className="setting-group">
           <label htmlFor="quality">Quality Level:</label>
           <select
@@ -194,7 +224,6 @@ setCompressionResults({
             />
             <span>Set target file size</span>
           </label>
-
           {useTargetSize && (
             <div className="target-size-input">
               <input
@@ -227,11 +256,7 @@ setCompressionResults({
             'Compress PDF'
           )}
         </button>
-
-        <button
-          onClick={resetForm}
-          className="reset-btn"
-        >
+        <button onClick={resetForm} className="reset-btn">
           Reset
         </button>
       </div>
@@ -269,11 +294,9 @@ setCompressionResults({
       {compressedPdf && (
         <div className="download-section">
           <h3>Download Compressed PDF</h3>
-          <button
-            onClick={downloadCompressedPdf}
-            className="download-btn"
-          >
-            <FaDownload className="download-icon" /> Download Compressed PDF
+          <button onClick={downloadCompressedPdf} className="download-btn">
+            <FaDownload className="download-icon" />
+            Download Compressed PDF
           </button>
         </div>
       )}
@@ -293,4 +316,3 @@ setCompressionResults({
 };
 
 export default AdvancedCompressPDF;
-
