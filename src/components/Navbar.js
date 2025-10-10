@@ -84,7 +84,7 @@ const Navbar = () => {
                   <h4>Omptimize</h4>
                   <ul>
                     <li><Link to="/compress" onClick={() => { setDropdownOpen(false); setMobileMenuOpen(false); }}>Compress PDF</Link></li>
-                    <li><Link to="/image-to-pdf" onClick={() => { setDropdownOpen(false); setMobileMenuOpen(false); }}>Image to PDF</Link></li>
+                    <li><Link to="/file-converter" onClick={() => { setDropdownOpen(false); setMobileMenuOpen(false); }}>File Converter</Link></li>
                   </ul>
                 </div>
                 <div className="dropdown-column">
