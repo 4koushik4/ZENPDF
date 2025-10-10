@@ -11,7 +11,6 @@ import Home0 from "./components/home0";
 import MergePDF from "./components/MergePDF";
 import SplitPDF from "./components/SplitPDF";
 import ExtractPages from "./components/ExtractPages";
-import ImageToPDF from "./components/ImageToPDF";
 import WatermarkPDF from "./components/WatermarkPDF";
 import Fundraiser from "./components/Fundraiser";
 import PasswordProtect from './components/PasswordProtect';
@@ -255,7 +254,6 @@ const App = () => {
           <Route path="/remove-pages" element={<Layout><RemovePages /></Layout>} />
           <Route path="/rotate-pdf" element={<Layout><RotatePDF /></Layout>} />
           <Route path="/reorder-pages" element={<Layout><ReorderPages /></Layout>} />
-          <Route path="/image-to-pdf" element={<Layout><ImageToPDF /></Layout>} />
           <Route path="/watermark" element={<Layout><WatermarkPDF /></Layout>} />
           <Route path="/password-protect" element={<Layout><PasswordProtect /></Layout>} />
           <Route path="/sign-pdf" element={<Layout><SignPDF /></Layout>} />
