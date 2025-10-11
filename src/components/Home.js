@@ -90,9 +90,9 @@ const Home = () => {
           <h2>Compress PDF</h2>
           <p>Reduce PDF file size</p>
         </Link>
-        <Link to="/image-to-pdf" className="home-card">
+        <Link to="/file-converter" className="home-card">
           <h2>Image to PDF</h2>
-          <p>Convert images to PDF format</p>
+          <p>Convert files to any format</p>
         </Link>
         <Link to="/page-numbers" className="home-card">
           <h2>Add Page Numbers</h2>
