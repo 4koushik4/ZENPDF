@@ -91,7 +91,7 @@ const Home = () => {
           <p>Reduce PDF file size</p>
         </Link>
         <Link to="/file-converter" className="home-card">
-          <h2>Image to PDF</h2>
+          <h2>File Converter</h2>
           <p>Convert files to any format</p>
         </Link>
         <Link to="/page-numbers" className="home-card">
