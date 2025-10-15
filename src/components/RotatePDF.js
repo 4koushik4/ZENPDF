@@ -123,6 +123,8 @@ const RotatePDF = () => {
 
   return (
     <div className="rotate-pdf-container">
+    <div className="rotate-pdf">
+
       <h2>Rotate PDF Pages</h2>
 
       <div className="form-group">
@@ -146,7 +148,11 @@ const RotatePDF = () => {
               </div>
             </div>
           ))}
+            </div>
+
         </div>
+     
+
       )}
 
       {selectedIndex !== null && (
