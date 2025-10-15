@@ -58,9 +58,9 @@ const RotatePDF = () => {
     setSelectedIndex(index);
   };
 
-  const handleRotationChange = async (rotation) => {
+  const handleRotationChange = async (angleValue) => {
     if (selectedIndex === null || !file) return;
-    const angle = parseInt(rotation) % 360;
+    const angle = parseInt(angleValue) % 360;
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -151,14 +151,17 @@ const RotatePDF = () => {
 
       {selectedIndex !== null && (
         <div className="form-group">
-          <label>Set rotation for Page {pages[selectedIndex].pageNumber} (0-360°):</label>
-          <input
-            type="number"
-            min="0"
-            max="360"
+          <label>Set rotation for Page {pages[selectedIndex].pageNumber}:</label>
+          <select
             value={pages[selectedIndex].rotation}
             onChange={(e) => handleRotationChange(e.target.value)}
-          />
+          >
+            <option value="0">No Rotation</option>
+            <option value="90">90° Clockwise</option>
+            <option value="180">180°</option>
+            <option value="270">90° Counter-clockwise</option>
+            <option value="360">360°</option>
+          </select>
         </div>
       )}
 
