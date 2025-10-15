@@ -247,3 +247,21 @@
 .page-grid::-webkit-scrollbar-thumb:hover {
   background: #2980b9;
 }
+.rotate-pages button {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #333;
+  border: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.rotate-pages button:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+.rotate-pages button:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+
