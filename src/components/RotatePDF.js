@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { PDFDocument } from "pdf-lib";
 import * as pdfjsLib from 'pdfjs-dist';
-
+import './RotatePDF.css';
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
