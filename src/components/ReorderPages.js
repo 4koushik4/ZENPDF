@@ -128,7 +128,7 @@ const ReorderPages = () => {
   return (
     <div className="remove-pages">
       <div className="remove-pages-container">
-        <h2>Reorder PDF Pages (Click to Swap)</h2>
+        <h2>Reorder PDF Pages</h2>
 
         <div className="form-group">
           <label htmlFor="pdfFile">Select PDF File:</label>
