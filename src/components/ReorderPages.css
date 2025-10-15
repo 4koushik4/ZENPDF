@@ -56,7 +56,7 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Grid + smaller previews */
+/* Grid and thumbnails */
 .page-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -74,12 +74,13 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  cursor: move;
   transition: all 0.3s ease;
   overflow: hidden;
   width: 120px;
   height: 160px;
   margin: 0 auto;
+  cursor: pointer;
+  border: 2px solid transparent;
 }
 
 .page-preview:hover {
@@ -87,7 +88,12 @@
   box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* ✅ make thumbnails small */
+/* Highlight selected page */
+.page-preview.selected {
+  border: 3px solid #ff3333;
+  transform: scale(1.05);
+}
+
 .thumbnail-img {
   width: 110px;
   height: 150px;
@@ -109,11 +115,6 @@
   font-size: 0.75rem;
   font-weight: 500;
   border-radius: 0 0 8px 8px;
-}
-
-.page-preview.dragging {
-  opacity: 0.5;
-  transform: scale(0.95);
 }
 
 /* Scrollbar */
