@@ -1,11 +1,16 @@
 import React, { useState, useRef } from 'react';
 import './RemovePages.css';
 import { PDFDocument } from 'pdf-lib';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const RemovePages = () => {
   const [file, setFile] = useState(null);
-  const [pageImages, setPageImages] = useState([]); // array of data URLs
-  const [pagesToRemove, setPagesToRemove] = useState([]); // array of indices (0-based)
+  const [pageImages, setPageImages] = useState([]); // thumbnails
+  const [pagesToRemove, setPagesToRemove] = useState([]); // indices
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,30 +21,36 @@ const RemovePages = () => {
     const selectedFile = e.target.files[0];
     if (selectedFile && selectedFile.type === 'application/pdf') {
       setFile(selectedFile);
-      // Set default filename based on the uploaded file
+      setError('');
       const baseName = selectedFile.name.replace('.pdf', '');
       setFileName(`${baseName}-pages-removed`);
-      setError('');
-      // Render thumbnails
+
+      // render thumbnails
       const fileReader = new FileReader();
-      fileReader.onload = async function() {
-        const typedarray = new Uint8Array(this.result);
-        // eslint-disable-next-line no-undef
-        const loadingTask = window.pdfjsLib.getDocument({ data: typedarray });
-        const pdf = await loadingTask.promise;
-        const images = [];
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 0.5 });
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-          await page.render({ canvasContext: context, viewport }).promise;
-          images.push(canvas.toDataURL());
+      fileReader.onload = async function () {
+        try {
+          const typedarray = new Uint8Array(this.result);
+          const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+          const pdf = await loadingTask.promise;
+          const images = [];
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: 1 }); // better clarity
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: context, viewport }).promise;
+            images.push(canvas.toDataURL());
+          }
+
+          setPageImages(images);
+          setPagesToRemove([]);
+        } catch (err) {
+          console.error('Error rendering PDF:', err);
+          setError('Unable to preview pages. Please try another file.');
         }
-        setPageImages(images);
-        setPagesToRemove([]);
       };
       fileReader.readAsArrayBuffer(selectedFile);
     } else {
@@ -76,32 +87,28 @@ const RemovePages = () => {
       return;
     }
     if (pagesToRemove.length === pageImages.length) {
-      setError('Cannot remove all pages. At least one page must remain.');
+      setError('Cannot remove all pages. At least one must remain.');
       return;
     }
 
     setLoading(true);
-
     try {
-      // Read the PDF file
       const arrayBuffer = await file.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const totalPages = pdfDoc.getPageCount();
-      // Create a new PDF document
       const newPdfDoc = await PDFDocument.create();
-      // Copy pages that are not in the pagesToRemove
+
       for (let i = 0; i < totalPages; i++) {
         if (!pagesToRemove.includes(i)) {
           const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [i]);
           newPdfDoc.addPage(copiedPage);
         }
       }
-      // Save the new PDF
+
       const pdfBytes = await newPdfDoc.save();
-      // Create a download link
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
-      // Download and reset state
+
       const link = document.createElement('a');
       link.href = url;
       link.download = `${fileName}.pdf`;
@@ -109,17 +116,15 @@ const RemovePages = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+
       setSuccess(true);
-      // Reset state for new input
       setFile(null);
       setPageImages([]);
       setPagesToRemove([]);
       setFileName('');
       setError('');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      // Remove the success message after a short delay
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
       setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
       console.error('Error:', err);
@@ -145,69 +150,108 @@ const RemovePages = () => {
               required
             />
           </div>
+
           {pageImages.length > 0 && (
-            <div className="remove-page-thumbnails" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', margin: '20px 0 24px 0' }}>
+            <div
+              className="remove-page-thumbnails"
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '16px',
+                justifyContent: 'center',
+                margin: '20px 0 24px 0',
+              }}
+            >
               {pageImages.map((img, idx) => (
                 <div
                   key={idx}
-                  className={`remove-thumb ${pagesToRemove.includes(idx) ? 'selected' : ''}`}
+                  onClick={() => togglePageRemove(idx)}
+                  title={
+                    pagesToRemove.includes(idx)
+                      ? 'Unmark for removal'
+                      : 'Mark for removal'
+                  }
                   style={{
-                    border: pagesToRemove.includes(idx) ? '3px solid #dc3545' : '1px solid #ccc',
+                    border: pagesToRemove.includes(idx)
+                      ? '3px solid #dc3545'
+                      : '1px solid #ccc',
                     borderRadius: 8,
                     cursor: 'pointer',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-                    width: 100,
-                    height: 140,
+                    width: 120,
+                    height: 160,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'relative',
                     background: '#fff',
                   }}
-                  onClick={() => togglePageRemove(idx)}
-                  title={pagesToRemove.includes(idx) ? 'Unmark for removal' : 'Mark for removal'}
                 >
-                  <img src={img} alt={`Page ${idx + 1}`} style={{ width: 90, height: 130, objectFit: 'contain', borderRadius: 6 }} />
-                  <span style={{
-                    position: 'absolute',
-                    top: 4,
-                    left: 4,
-                    background: pagesToRemove.includes(idx) ? '#dc3545' : '#ccc',
-                    color: 'white',
-                    borderRadius: '50%',
-                    width: 24,
-                    height: 24,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 'bold',
-                    fontSize: 14,
-                    border: '2px solid #fff',
-                  }}>{idx + 1}</span>
+                  <img
+                    src={img}
+                    alt={`Page ${idx + 1}`}
+                    style={{
+                      width: 110,
+                      height: 150,
+                      objectFit: 'contain',
+                      borderRadius: 6,
+                    }}
+                  />
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      left: 4,
+                      background: pagesToRemove.includes(idx)
+                        ? '#dc3545'
+                        : '#ccc',
+                      color: 'white',
+                      borderRadius: '50%',
+                      width: 24,
+                      height: 24,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: 14,
+                      border: '2px solid #fff',
+                    }}
+                  >
+                    {idx + 1}
+                  </span>
                 </div>
               ))}
             </div>
           )}
-          <div className="form-group">
-            <label htmlFor="fileName">Output Filename:</label>
-            <input
-              type="text"
-              id="fileName"
-              value={fileName}
-              onChange={e => setFileName(e.target.value)}
-              placeholder="Enter filename (without .pdf extension)"
-              required
-            />
-          </div>
-          <button type="submit" disabled={loading} className="BUTTON">
-            {loading ? 'Removing Pages...' : 'Remove Selected Pages'}
-          </button>
+
+          {pageImages.length > 0 && (
+            <div className="form-group">
+              <label htmlFor="fileName">Output Filename:</label>
+              <input
+                type="text"
+                id="fileName"
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+                placeholder="Enter filename (without .pdf extension)"
+                required
+              />
+            </div>
+          )}
+
+          {pageImages.length > 0 && (
+            <button type="submit" disabled={loading} className="BUTTON">
+              {loading ? 'Removing Pages...' : 'Remove Selected Pages'}
+            </button>
+          )}
         </form>
+
         {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">Pages removed successfully!</div>}
+        {success && (
+          <div className="success-message">Pages removed successfully!</div>
+        )}
       </div>
     </div>
   );
 };
 
-export default RemovePages; 
+export default RemovePages;
