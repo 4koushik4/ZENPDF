@@ -74,13 +74,13 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   overflow: hidden;
   width: 120px;
   height: 160px;
   margin: 0 auto;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 3px solid transparent; /* <-- allow highlight to show clearly */
 }
 
 .page-preview:hover {
@@ -88,11 +88,14 @@
   box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Highlight selected page */
+/* 🔥 Highlight selected page very clearly */
 .page-preview.selected {
-  border: 3px solid #ff3333;
+  border: 3px solid #ff0000 !important;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
   transform: scale(1.05);
+  z-index: 10;
 }
+
 
 .thumbnail-img {
   width: 110px;
