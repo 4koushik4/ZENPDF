@@ -3,7 +3,7 @@ import { PDFDocument } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import "./RemovePages.css";
+import "./ReorderPages.css";
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
