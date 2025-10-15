@@ -12,6 +12,7 @@ const RotatePDF = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [selectedPage, setSelectedPage] = useState(null);
   const fileInputRef = useRef();
 
   const handleFileChange = async (event) => {
@@ -22,6 +23,7 @@ const RotatePDF = () => {
     setSuccess(false);
     setPages([]);
     setRotations([]);
+    setSelectedPage(null);
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -60,6 +62,10 @@ const RotatePDF = () => {
       console.error("Error loading PDF:", err);
       setError("Error loading PDF file. Please try another file.");
     }
+  };
+
+  const handlePageSelect = (pageIndex) => {
+    setSelectedPage(pageIndex);
   };
 
   const handleRotationChange = (pageIndex, angle) => {
@@ -128,7 +134,7 @@ const RotatePDF = () => {
       <div className="rotate-pages-container">
         <h2>Rotate PDF Pages</h2>
         <p style={{ color: '#fff', opacity: 0.8, marginBottom: '20px' }}>
-          Click on any page to rotate it. All pages will be included in the downloaded PDF.
+          Click on any page to select it, then use rotation buttons. All pages will be included in download.
         </p>
 
         <div className="form-group">
@@ -144,7 +150,7 @@ const RotatePDF = () => {
 
         {pages.length > 0 && (
           <>
-            {/* Stats */}
+            {/* Stats and Selected Page Info */}
             <div style={{ 
               textAlign: 'center', 
               color: '#fff', 
@@ -154,21 +160,33 @@ const RotatePDF = () => {
               borderRadius: '8px'
             }}>
               <strong>Total Pages: {pages.length}</strong> | 
-              <strong style={{ color: '#4facfe' }}> Rotated: {rotatedPagesCount}</strong> | 
-              <strong style={{ color: '#28a745' }}> Unchanged: {pages.length - rotatedPagesCount}</strong>
+              <strong style={{ color: '#4facfe' }}> Rotated: {rotatedPagesCount}</strong>
+              {selectedPage !== null && (
+                <span style={{ color: '#ffcc00', marginLeft: '15px' }}>
+                  • Selected: Page {selectedPage + 1} ({rotations[selectedPage]}°)
+                </span>
+              )}
             </div>
 
             {/* All Pages Grid */}
             <div className="page-grid">
               {pages.map((page, index) => (
-                <div key={page.id} className="page-preview">
+                <div 
+                  key={page.id} 
+                  className="page-preview"
+                  onClick={() => handlePageSelect(index)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div style={{ 
                     position: 'relative',
                     background: 'white',
                     padding: '10px',
                     borderRadius: '8px',
-                    border: rotations[index] !== 0 ? '3px solid #4facfe' : '1px solid #ddd',
-                    cursor: 'pointer'
+                    border: selectedPage === index ? '3px solid #ffcc00' : 
+                           rotations[index] !== 0 ? '3px solid #4facfe' : '1px solid #ddd',
+                    transform: selectedPage === index ? 'scale(1.05)' : 'scale(1)',
+                    transition: 'all 0.3s ease',
+                    boxShadow: selectedPage === index ? '0 5px 15px rgba(255, 204, 0, 0.5)' : '0 2px 5px rgba(0,0,0,0.1)'
                   }}>
                     <img
                       src={page.src}
@@ -201,7 +219,7 @@ const RotatePDF = () => {
                       )}
                     </div>
 
-                    {/* Rotation Controls for this page */}
+                    {/* Rotation Controls - Only show for selected page or always show? */}
                     <div style={{ 
                       display: 'grid', 
                       gridTemplateColumns: '1fr 1fr',
@@ -210,7 +228,10 @@ const RotatePDF = () => {
                     }}>
                       <button 
                         type="button"
-                        onClick={() => handleRotationChange(index, 0)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent page selection when clicking button
+                          handleRotationChange(index, 0);
+                        }}
                         style={{
                           padding: '4px 8px',
                           background: rotations[index] === 0 ? '#0072ff' : '#6c757d',
@@ -225,7 +246,10 @@ const RotatePDF = () => {
                       </button>
                       <button 
                         type="button"
-                        onClick={() => handleRotationChange(index, 90)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRotationChange(index, 90);
+                        }}
                         style={{
                           padding: '4px 8px',
                           background: rotations[index] === 90 ? '#0072ff' : '#6c757d',
@@ -240,7 +264,10 @@ const RotatePDF = () => {
                       </button>
                       <button 
                         type="button"
-                        onClick={() => handleRotationChange(index, 180)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRotationChange(index, 180);
+                        }}
                         style={{
                           padding: '4px 8px',
                           background: rotations[index] === 180 ? '#0072ff' : '#6c757d',
@@ -255,7 +282,10 @@ const RotatePDF = () => {
                       </button>
                       <button 
                         type="button"
-                        onClick={() => handleRotationChange(index, 270)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRotationChange(index, 270);
+                        }}
                         style={{
                           padding: '4px 8px',
                           background: rotations[index] === 270 ? '#0072ff' : '#6c757d',
@@ -278,7 +308,10 @@ const RotatePDF = () => {
                     }}>
                       <button 
                         type="button"
-                        onClick={() => handleRotationChange(index, (rotations[index] - 90 + 360) % 360)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRotationChange(index, (rotations[index] - 90 + 360) % 360);
+                        }}
                         style={{
                           padding: '3px 6px',
                           background: '#4facfe',
@@ -294,7 +327,10 @@ const RotatePDF = () => {
                       </button>
                       <button 
                         type="button"
-                        onClick={() => handleRotationChange(index, (rotations[index] + 90) % 360)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRotationChange(index, (rotations[index] + 90) % 360);
+                        }}
                         style={{
                           padding: '3px 6px',
                           background: '#4facfe',
@@ -313,6 +349,79 @@ const RotatePDF = () => {
                 </div>
               ))}
             </div>
+
+            {/* Selected Page Controls - More prominent when a page is selected */}
+            {selectedPage !== null && (
+              <div style={{
+                textAlign: 'center',
+                margin: '20px 0',
+                padding: '15px',
+                background: 'rgba(255, 204, 0, 0.1)',
+                borderRadius: '8px',
+                border: '1px solid #ffcc00'
+              }}>
+                <h3 style={{ color: '#ffcc00', marginBottom: '10px' }}>
+                  Rotate Page {selectedPage + 1}
+                </h3>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button 
+                    onClick={() => handleRotationChange(selectedPage, 0)}
+                    style={{
+                      padding: '10px 15px',
+                      background: rotations[selectedPage] === 0 ? '#0072ff' : '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    0° Rotation
+                  </button>
+                  <button 
+                    onClick={() => handleRotationChange(selectedPage, 90)}
+                    style={{
+                      padding: '10px 15px',
+                      background: rotations[selectedPage] === 90 ? '#0072ff' : '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    90° Rotation
+                  </button>
+                  <button 
+                    onClick={() => handleRotationChange(selectedPage, 180)}
+                    style={{
+                      padding: '10px 15px',
+                      background: rotations[selectedPage] === 180 ? '#0072ff' : '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    180° Rotation
+                  </button>
+                  <button 
+                    onClick={() => handleRotationChange(selectedPage, 270)}
+                    style={{
+                      padding: '10px 15px',
+                      background: rotations[selectedPage] === 270 ? '#0072ff' : '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    270° Rotation
+                  </button>
+                </div>
+                <div style={{ color: '#ffcc00', marginTop: '10px' }}>
+                  Current: {rotations[selectedPage]}° • Click anywhere to deselect
+                </div>
+              </div>
+            )}
 
             {/* Download Section */}
             <div className="download-section" style={{
@@ -362,7 +471,7 @@ const RotatePDF = () => {
               <div style={{ color: '#fff', marginTop: '10px', fontSize: '14px' }}>
                 {rotatedPagesCount > 0 ? (
                   <span style={{ color: '#4facfe' }}>
-                    ✓ {rotatedPagesCount} page{rotatedPagesCount !== 1 ? 's' : ''} will be rotated • 
+                    ✓ {rotatedPagesCount} page{rotatedPagesCount !== 1 ? 's' : ''} rotated • 
                     All {pages.length} pages included
                   </span>
                 ) : (
