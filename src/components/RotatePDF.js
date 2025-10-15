@@ -12,7 +12,6 @@ const RotatePDF = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const fileInputRef = useRef();
 
   const handleFileChange = async (event) => {
@@ -23,7 +22,6 @@ const RotatePDF = () => {
     setSuccess(false);
     setPages([]);
     setRotations([]);
-    setCurrentPageIndex(0);
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -34,7 +32,7 @@ const RotatePDF = () => {
 
       for (let i = 0; i < pdf.numPages; i++) {
         const page = await pdf.getPage(i + 1);
-        const viewport = page.getViewport({ scale: 0.2 }); // Smaller scale for faster loading
+        const viewport = page.getViewport({ scale: 0.2 });
 
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
@@ -72,14 +70,6 @@ const RotatePDF = () => {
     });
   };
 
-  const rotateAll = (angle) => {
-    setRotations(prev => prev.map(() => angle));
-  };
-
-  const resetAll = () => {
-    setRotations(prev => prev.map(() => 0));
-  };
-
   const handleDownload = async () => {
     if (!pages.length || !fileInputRef.current?.files?.[0]) {
       setError("Please select a PDF file first.");
@@ -96,13 +86,15 @@ const RotatePDF = () => {
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const newPdf = await PDFDocument.create();
 
-      // Copy each page and apply the rotation
+      // Copy ALL pages and apply rotations where needed
       for (let i = 0; i < pdfDoc.getPageCount(); i++) {
         const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
         
-        // Apply rotation (convert degrees to radians)
-        const rotationAngle = (rotations[i] * Math.PI) / 180;
-        copiedPage.setRotation(rotationAngle);
+        // Apply rotation if it's not 0 degrees
+        if (rotations[i] !== 0) {
+          const rotationAngle = (rotations[i] * Math.PI) / 180;
+          copiedPage.setRotation(rotationAngle);
+        }
         
         newPdf.addPage(copiedPage);
       }
@@ -122,7 +114,7 @@ const RotatePDF = () => {
       setSuccess(true);
     } catch (err) {
       console.error("Error creating PDF:", err);
-      setError("Error creating rotated PDF. Please try again. Error: " + err.message);
+      setError("Error creating rotated PDF. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -136,7 +128,7 @@ const RotatePDF = () => {
       <div className="rotate-pages-container">
         <h2>Rotate PDF Pages</h2>
         <p style={{ color: '#fff', opacity: 0.8, marginBottom: '20px' }}>
-          Rotate only the pages you need. Unchanged pages will remain as is.
+          Click on any page to rotate it. All pages will be included in the downloaded PDF.
         </p>
 
         <div className="form-group">
@@ -152,45 +144,7 @@ const RotatePDF = () => {
 
         {pages.length > 0 && (
           <>
-            {/* Bulk Actions */}
-            <div className="bulk-actions" style={{ 
-              marginBottom: '20px', 
-              display: 'flex', 
-              gap: '10px', 
-              justifyContent: 'center',
-              flexWrap: 'wrap'
-            }}>
-              <button 
-                type="button"
-                className="bulk-btn"
-                onClick={() => rotateAll(90)}
-              >
-                Rotate All 90°
-              </button>
-              <button 
-                type="button"
-                className="bulk-btn"
-                onClick={() => rotateAll(180)}
-              >
-                Rotate All 180°
-              </button>
-              <button 
-                type="button"
-                className="bulk-btn"
-                onClick={() => rotateAll(270)}
-              >
-                Rotate All 270°
-              </button>
-              <button 
-                type="button"
-                className="bulk-btn reset-btn"
-                onClick={resetAll}
-              >
-                Reset All
-              </button>
-            </div>
-
-            {/* Quick Stats */}
+            {/* Stats */}
             <div style={{ 
               textAlign: 'center', 
               color: '#fff', 
@@ -204,7 +158,7 @@ const RotatePDF = () => {
               <strong style={{ color: '#28a745' }}> Unchanged: {pages.length - rotatedPagesCount}</strong>
             </div>
 
-            {/* Page Grid - All pages visible */}
+            {/* All Pages Grid */}
             <div className="page-grid">
               {pages.map((page, index) => (
                 <div key={page.id} className="page-preview">
@@ -213,7 +167,8 @@ const RotatePDF = () => {
                     background: 'white',
                     padding: '10px',
                     borderRadius: '8px',
-                    border: rotations[index] !== 0 ? '3px solid #4facfe' : '1px solid #ddd'
+                    border: rotations[index] !== 0 ? '3px solid #4facfe' : '1px solid #ddd',
+                    cursor: 'pointer'
                   }}>
                     <img
                       src={page.src}
@@ -246,7 +201,7 @@ const RotatePDF = () => {
                       )}
                     </div>
 
-                    {/* Rotation Controls */}
+                    {/* Rotation Controls for this page */}
                     <div style={{ 
                       display: 'grid', 
                       gridTemplateColumns: '1fr 1fr',
@@ -401,17 +356,18 @@ const RotatePDF = () => {
                   opacity: loading ? 0.6 : 1
                 }}
               >
-                {loading ? "Creating Rotated PDF..." : "Download Rotated PDF"}
+                {loading ? "Creating PDF..." : "Download PDF"}
               </button>
 
               <div style={{ color: '#fff', marginTop: '10px', fontSize: '14px' }}>
                 {rotatedPagesCount > 0 ? (
                   <span style={{ color: '#4facfe' }}>
-                    ✓ {rotatedPagesCount} page{rotatedPagesCount !== 1 ? 's' : ''} will be rotated
+                    ✓ {rotatedPagesCount} page{rotatedPagesCount !== 1 ? 's' : ''} will be rotated • 
+                    All {pages.length} pages included
                   </span>
                 ) : (
                   <span style={{ color: '#ffcc00' }}>
-                    ⚠ No pages rotated yet. Download will create original PDF.
+                    ⚠ No pages rotated • All {pages.length} pages will be included as original
                   </span>
                 )}
               </div>
@@ -427,7 +383,7 @@ const RotatePDF = () => {
 
         {success && (
           <div className="success-message">
-            ✅ PDF rotated and downloaded successfully!
+            ✅ PDF downloaded successfully! All {pages.length} pages included.
           </div>
         )}
 
