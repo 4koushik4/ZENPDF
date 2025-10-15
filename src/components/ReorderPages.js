@@ -1,147 +1,165 @@
 import React, { useState, useRef } from "react";
 import { PDFDocument } from "pdf-lib";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
+import "./ReorderPages.css";
 
-const RotatePDF = () => {
-  const [pages, setPages] = useState([]);
-  const [rotations, setRotations] = useState([]);
-  const [fileName, setFileName] = useState("rotated");
+// Configure PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+const ReorderPages = () => {
+  const [file, setFile] = useState(null);
+  const [pages, setPages] = useState([]); // { id, pageNumber, src }
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [fileName, setFileName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
   const fileInputRef = useRef();
 
+  // Load PDF and create thumbnails
   const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    setError(null);
+    const selectedFile = event.target.files[0];
+    if (!selectedFile || selectedFile.type !== "application/pdf") {
+      setError("Please select a valid PDF file");
+      return;
+    }
+    setFile(selectedFile);
+    setFileName(selectedFile.name.replace(".pdf", "-reordered"));
+    setError("");
+    setSuccess(false);
+    setSelectedIndex(null);
+    setPages([]);
+
+    try {
+      const fileReader = new FileReader();
+      fileReader.onload = async function () {
+        const typedarray = new Uint8Array(this.result);
+        const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+        const pdf = await loadingTask.promise;
+        const tempPages = [];
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 0.3 }); // smaller preview
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          await page.render({ canvasContext: context, viewport }).promise;
+          const img = canvas.toDataURL();
+          tempPages.push({ id: i, pageNumber: i, src: img });
+        }
+
+        setPages(tempPages);
+      };
+      fileReader.readAsArrayBuffer(selectedFile);
+    } catch (err) {
+      console.error("PDF Load Error:", err);
+      setError("Error reading PDF. Please try again.");
+    }
+  };
+
+  // Handle page swapping selection
+  const handlePageClick = (index) => {
+    if (selectedIndex === null) {
+      // Select first page
+      setSelectedIndex(index);
+    } else if (selectedIndex === index) {
+      // Deselect if same page clicked again
+      setSelectedIndex(null);
+    } else {
+      // Swap pages
+      const newPages = [...pages];
+      [newPages[selectedIndex], newPages[index]] = [
+        newPages[index],
+        newPages[selectedIndex],
+      ];
+      setPages(newPages);
+      setSelectedIndex(null);
+    }
+  };
+
+  // Rebuild and download PDF after reorder
+  const handleDownload = async () => {
+    if (!file) {
+      setError("Please select a PDF first");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
     setSuccess(false);
 
     try {
       const reader = new FileReader();
-      reader.onload = async (e) => {
-        const arrayBuffer = e.target.result;
-        const pdfDoc = await PDFDocument.load(arrayBuffer);
+      reader.onload = async (event) => {
+        const existingPdfBytes = new Uint8Array(event.target.result);
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const newPdfDoc = await PDFDocument.create();
 
-        const numPages = pdfDoc.getPageCount();
-        const pagePreviews = [];
-        const pageRotations = [];
-
-        for (let i = 0; i < numPages; i++) {
-          const page = pdfDoc.getPage(i);
-          const viewportScale = 0.15;
-
-          // Render page to canvas for preview
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-          const { width, height } = page.getSize();
-          canvas.width = width * viewportScale;
-          canvas.height = height * viewportScale;
-
-          // Draw page content on canvas
-          // pdf-lib doesn't render to canvas directly; for previews, we'll just show a placeholder
-          // In a real app, you would use PDF.js to render thumbnails
-          ctx.fillStyle = "#f0f0f0";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = "#000";
-          ctx.font = `${10 * viewportScale}px Arial`;
-          ctx.fillText(`Page ${i + 1}`, 10, 20);
-
-          const src = canvas.toDataURL("image/png");
-          pagePreviews.push({ id: i, src, pageNumber: i + 1 });
-          pageRotations.push(0); // default rotation 0°
+        for (let page of pages) {
+          const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [
+            page.pageNumber - 1,
+          ]);
+          newPdfDoc.addPage(copiedPage);
         }
 
-        setPages(pagePreviews);
-        setRotations(pageRotations);
-      };
+        const newPdfBytes = await newPdfDoc.save();
+        const blob = new Blob([newPdfBytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${fileName}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
 
+        setSuccess(true);
+      };
       reader.readAsArrayBuffer(file);
     } catch (err) {
-      console.error(err);
-      setError("Error loading PDF file");
-    }
-  };
-
-  const handleRotationChange = (index, delta) => {
-    setRotations((prev) =>
-      prev.map((rot, i) =>
-        i === index ? (rot + delta + 360) % 360 : rot
-      )
-    );
-  };
-
-  const handleDownload = async () => {
-    if (!pages.length) return;
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      const file = fileInputRef.current.files[0];
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const newPdf = await PDFDocument.create();
-
-      for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-        const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
-        copiedPage.setRotation((rotations[i] * Math.PI) / 180);
-        newPdf.addPage(copiedPage);
-      }
-
-      const pdfBytes = await newPdf.save();
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${fileName}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-      setSuccess(true);
-    } catch (err) {
-      console.error(err);
-      setError("Error creating rotated PDF");
+      console.error("Error rebuilding PDF:", err);
+      setError("Error while creating reordered PDF");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="rotate-pages">
-      <div className="rotate-pages-conatiner">
-      <h2>Rotate PDF Pages</h2>
+    <div className="remove-pages">
+      <div className="remove-pages-container">
+        <h2>Reorder PDF Pages (Click to Swap)</h2>
 
-      <div className="form-group">
-        <label htmlFor="pdfFile">Select PDF File:</label>
-        <input
-          ref={fileInputRef}
-          type="file"
-          id="pdfFile"
-          accept=".pdf"
-          onChange={handleFileChange}
-        />
-      </div>
+        <div className="form-group">
+          <label htmlFor="pdfFile">Select PDF File:</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            id="pdfFile"
+            accept=".pdf"
+            onChange={handleFileChange}
+          />
+        </div>
 
-      {pages.length > 0 && (
-        <>
-          <div className="page-grid" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        {pages.length > 0 && (
+          <div className="page-grid">
             {pages.map((page, index) => (
-              <div key={page.id} className="page-preview" style={{ textAlign: "center" }}>
-                <img
-                  src={page.src}
-                  alt={`Page ${page.pageNumber}`}
-                  style={{ width: "150px", height: "auto", display: "block", marginBottom: "5px" }}
-                />
-                <div>Page {page.pageNumber}</div>
-                <div>
-                  <button onClick={() => handleRotationChange(index, -90)}>⟲</button>
-                  <span style={{ margin: "0 5px" }}>{rotations[index]}°</span>
-                  <button onClick={() => handleRotationChange(index, 90)}>⟳</button>
-                </div>
+              <div
+                key={page.id}
+                className={`page-preview ${
+                  selectedIndex === index ? "selected" : ""
+                }`}
+                onClick={() => handlePageClick(index)}
+              >
+                <img src={page.src} alt={`Page ${page.pageNumber}`} />
+                <div className="page-number">Page {page.pageNumber}</div>
               </div>
             ))}
           </div>
+        )}
 
-          <div className="form-group" style={{ marginTop: "15px" }}>
+        {pages.length > 0 && (
+          <div className="form-group">
             <label htmlFor="fileName">Output Filename:</label>
             <input
               type="text"
@@ -150,18 +168,23 @@ const RotatePDF = () => {
               onChange={(e) => setFileName(e.target.value)}
             />
           </div>
+        )}
 
+        {pages.length > 0 && (
           <button onClick={handleDownload} disabled={loading}>
-            {loading ? "Creating PDF..." : "Download Rotated PDF"}
+            {loading ? "Creating PDF..." : "Download Reordered PDF"}
           </button>
-        </>
-      )}
+        )}
 
-      {error && <div style={{ color: "red", marginTop: "10px" }}>{error}</div>}
-      {success && <div style={{ color: "green", marginTop: "10px" }}>✅ PDF rotated and downloaded successfully!</div>}
-    </div>
+        {error && <div className="error-message">{error}</div>}
+        {success && (
+          <div className="success-message">
+            ✅ PDF reordered and downloaded successfully!
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default RotatePDF;
+export default ReorderPages;
