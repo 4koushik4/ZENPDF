@@ -1,143 +1,97 @@
-import React, { useState, useRef } from 'react';
-import './RemovePages.css';
-import { PDFDocument, degrees } from 'pdf-lib';
+import React, { useState, useRef } from "react";
+import { PDFDocument, degrees } from "pdf-lib";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
+import "./RemovePages.css";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const RotatePDF = () => {
   const [file, setFile] = useState(null);
-  const [selectedPages, setSelectedPages] = useState('');
-  const [rotation, setRotation] = useState('90');
-  const [fileName, setFileName] = useState('');
+  const [pages, setPages] = useState([]); // { pageNumber, src, rotation }
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const fileInputRef = useRef(null);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const fileInputRef = useRef();
 
-  const resetForm = () => {
-    setFile(null);
-    setSelectedPages('');
-    setRotation('90');
-    setFileName('');
-    setError('');
-    setSuccess(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.type === 'application/pdf') {
-      setFile(selectedFile);
-      // Set default filename based on the uploaded file
-      const baseName = selectedFile.name.replace('.pdf', '');
-      setFileName(`${baseName}-rotated`);
-      setError('');
-    } else {
-      setFile(null);
-      setError('Please select a valid PDF file');
+    if (!selectedFile || selectedFile.type !== "application/pdf") {
+      setError("Please select a valid PDF file");
+      return;
     }
-  };
-
-  const handlePagesChange = (e) => {
-    setSelectedPages(e.target.value);
-    setError('');
-  };
-
-  const handleRotationChange = (e) => {
-    setRotation(e.target.value);
-    setError('');
-  };
-
-  const handleFileNameChange = (e) => {
-    setFileName(e.target.value);
-    setError('');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+    setFile(selectedFile);
+    setError("");
     setSuccess(false);
-
-    if (!file) {
-      setError('Please select a PDF file');
-      return;
-    }
-
-    if (!selectedPages) {
-      setError('Please enter pages to rotate');
-      return;
-    }
-
-    if (!fileName) {
-      setError('Please enter a filename');
-      return;
-    }
-
-    setLoading(true);
+    setSelectedIndex(null);
+    setPages([]);
 
     try {
-      // Parse the selected pages
-      const pagesToRotate = new Set();
-      const ranges = selectedPages.split(',').map(range => range.trim());
-      
-      for (const range of ranges) {
-        if (range.includes('-')) {
-          const [start, end] = range.split('-').map(num => parseInt(num.trim()));
-          if (isNaN(start) || isNaN(end) || start > end) {
-            throw new Error('Invalid page range format');
-          }
-          for (let i = start; i <= end; i++) {
-            pagesToRotate.add(i);
-          }
-        } else {
-          const page = parseInt(range);
-          if (isNaN(page)) {
-            throw new Error('Invalid page number format');
-          }
-          pagesToRotate.add(page);
-        }
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdf = await loadingTask.promise;
+
+      const tempPages = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 0.15 });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d");
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        tempPages.push({ pageNumber: i, src: canvas.toDataURL(), rotation: 0 });
       }
 
-      // Read the PDF file
+      setPages(tempPages);
+    } catch (err) {
+      console.error(err);
+      setError("Error loading PDF pages");
+    }
+  };
+
+  const handleSelectPage = (index) => {
+    setSelectedIndex(index);
+  };
+
+  const handleRotationChange = (rotation) => {
+    if (selectedIndex === null) return;
+    const updatedPages = [...pages];
+    updatedPages[selectedIndex].rotation = parseInt(rotation);
+    setPages(updatedPages);
+    setSelectedIndex(null); // reset selection
+  };
+
+  const handleDownload = async () => {
+    if (!file) return;
+    setLoading(true);
+    setError("");
+    setSuccess(false);
+
+    try {
       const arrayBuffer = await file.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const totalPages = pdfDoc.getPageCount();
+      const newPdf = await PDFDocument.create();
 
-      // Validate page numbers
-      for (const page of pagesToRotate) {
-        if (page < 1 || page > totalPages) {
-          throw new Error(`Page ${page} is out of range (1-${totalPages})`);
-        }
+      for (let i = 0; i < pages.length; i++) {
+        const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
+        if (pages[i].rotation) copiedPage.setRotation(degrees(pages[i].rotation));
+        newPdf.addPage(copiedPage);
       }
 
-      // Rotate the selected pages
-      for (let i = 0; i < totalPages; i++) {
-        if (pagesToRotate.has(i + 1)) {
-          const page = pdfDoc.getPage(i);
-          // Use PDF-lib's degrees function for rotation
-          page.setRotation(degrees(parseInt(rotation)));
-        }
-      }
-
-      // Save the new PDF
-      const pdfBytes = await pdfDoc.save();
-      
-      // Create a download link
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const pdfBytes = await newPdf.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
       link.href = url;
-      link.download = `${fileName}.pdf`;
-      document.body.appendChild(link);
+      link.download = file.name.replace(".pdf", "-rotated.pdf");
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
+      URL.revokeObjectURL(url);
       setSuccess(true);
-      resetForm();
     } catch (err) {
-      console.error('Error:', err);
-      setError(err.message || 'An error occurred while rotating pages');
+      console.error(err);
+      setError("Error generating rotated PDF");
     } finally {
       setLoading(false);
     }
@@ -147,69 +101,59 @@ const RotatePDF = () => {
     <div className="remove-pages">
       <div className="remove-pages-container">
         <h2>Rotate PDF Pages</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="pdfFile">Select PDF File:</label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              id="pdfFile"
-              accept=".pdf"
-              onChange={handleFileChange}
-              required
-            />
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="pages">Pages to Rotate:</label>
-            <input
-              type="text"
-              id="pages"
-              value={selectedPages}
-              onChange={handlePagesChange}
-              placeholder="e.g., 1,3,5-7"
-              required
-            />
-            <small className="help-text">
-              Enter page numbers or ranges (e.g., 1,3,5-7)
-            </small>
-          </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf"
+          onChange={handleFileChange}
+        />
 
-          <div className="form-group">
-            <label htmlFor="rotation">Rotation Angle:</label>
+        {error && <div className="error-message">{error}</div>}
+
+        {pages.length > 0 && (
+          <div className="page-grid">
+            {pages.map((page, index) => (
+              <div
+                key={page.pageNumber}
+                className={`page-preview ${selectedIndex === index ? "selected" : ""}`}
+                onClick={() => handleSelectPage(index)}
+              >
+                <img src={page.src} alt={`Page ${page.pageNumber}`} />
+                <div className="page-number">
+                  Page {page.pageNumber} {page.rotation ? `(${page.rotation}°)` : ""}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {selectedIndex !== null && (
+          <div style={{ marginTop: 16 }}>
+            <label>Select rotation for Page {pages[selectedIndex].pageNumber}: </label>
             <select
-              id="rotation"
-              value={rotation}
-              onChange={handleRotationChange}
-              required
-              style={{ color: '#000' }}
+              onChange={(e) => handleRotationChange(e.target.value)}
+              defaultValue="90"
+              style={{ marginLeft: 8, padding: "4px 8px" }}
             >
-              <option value="90" style={{ color: '#000' }}>90° Clockwise</option>
-              <option value="180" style={{ color: '#000' }}>180°</option>
-              <option value="270" style={{ color: '#000' }}>90° Counter-clockwise</option>
+              <option value="90">90° Clockwise</option>
+              <option value="180">180°</option>
+              <option value="270">90° Counter-clockwise</option>
+              <option value="0">No Rotation</option>
             </select>
           </div>
+        )}
 
-          <div className="form-group">
-            <label htmlFor="fileName">Output Filename:</label>
-            <input
-              type="text"
-              id="fileName"
-              value={fileName}
-              onChange={handleFileNameChange}
-              placeholder="Enter filename (without .pdf extension)"
-              required
-            />
-          </div>
-          <button type="submit" disabled={loading}>
-            {loading ? 'Rotating Pages...' : 'Rotate Pages'}
+        {pages.length > 0 && (
+          <button onClick={handleDownload} disabled={loading} style={{ marginTop: 16 }}>
+            {loading ? "Creating PDF..." : "Download Rotated PDF"}
           </button>
-        </form>
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">Pages rotated successfully!</div>}
+        )}
+
+        {success && <div className="success-message">PDF rotated successfully!</div>}
       </div>
     </div>
   );
 };
 
-export default RotatePDF; 
+export default RotatePDF;
