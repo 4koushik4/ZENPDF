@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { PDFDocument } from "pdf-lib";
+import "./RotatePDF.css";
 
 const RotatePDF = () => {
   const [pages, setPages] = useState([]);
