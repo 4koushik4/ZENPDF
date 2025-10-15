@@ -38,7 +38,6 @@ const ReorderPages = () => {
         const loadingTask = pdfjsLib.getDocument({ data: typedarray });
         const pdf = await loadingTask.promise;
         const tempPages = [];
-
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const viewport = page.getViewport({ scale: 0.15 }); // smaller preview
@@ -50,7 +49,6 @@ const ReorderPages = () => {
           const img = canvas.toDataURL();
           tempPages.push({ id: i, pageNumber: i, src: img });
         }
-
         setPages(tempPages);
       };
       fileReader.readAsArrayBuffer(selectedFile);
@@ -86,7 +84,6 @@ const ReorderPages = () => {
       setError("Please select a PDF first");
       return;
     }
-
     setLoading(true);
     setError("");
     setSuccess(false);
@@ -113,7 +110,6 @@ const ReorderPages = () => {
         link.download = `${fileName}.pdf`;
         link.click();
         URL.revokeObjectURL(url);
-
         setSuccess(true);
       };
       reader.readAsArrayBuffer(file);
@@ -126,10 +122,9 @@ const ReorderPages = () => {
   };
 
   return (
-    <div className="remove-pages">
-      <div className="remove-pages-container">
+    <div className="reorder-pages">
+      <div className="reorder-pages-container">
         <h2>Reorder PDF Pages</h2>
-
         <div className="form-group">
           <label htmlFor="pdfFile">Select PDF File:</label>
           <input
@@ -140,7 +135,6 @@ const ReorderPages = () => {
             onChange={handleFileChange}
           />
         </div>
-
         {pages.length > 0 && (
           <div className="page-grid">
             {pages.map((page, index) => (
@@ -157,7 +151,6 @@ const ReorderPages = () => {
             ))}
           </div>
         )}
-
         {pages.length > 0 && (
           <div className="form-group">
             <label htmlFor="fileName">Output Filename:</label>
@@ -169,17 +162,16 @@ const ReorderPages = () => {
             />
           </div>
         )}
-
         {pages.length > 0 && (
           <button onClick={handleDownload} disabled={loading}>
             {loading ? "Creating PDF..." : "Download Reordered PDF"}
           </button>
         )}
-
         {error && <div className="error-message">{error}</div>}
         {success && (
           <div className="success-message">
-            ✅ PDF reordered and downloaded successfully!
+            {" "}
+            ✅ PDF reordered and downloaded successfully!{" "}
           </div>
         )}
       </div>
