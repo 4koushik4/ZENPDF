@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { PDFDocument } from "pdf-lib";
 import * as pdfjsLib from 'pdfjs-dist';
 import './RotatePDF.css';
@@ -14,11 +14,6 @@ const RotatePDF = () => {
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef();
 
-  // Check if PDF.js is loaded
-  useEffect(() => {
-    console.log("PDF.js version:", pdfjsLib.version);
-  }, []);
-
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -30,14 +25,11 @@ const RotatePDF = () => {
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      
-      // Load PDF document
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       
       const pagePreviews = [];
       const pageRotations = [];
 
-      // Render each page
       for (let i = 0; i < pdf.numPages; i++) {
         const page = await pdf.getPage(i + 1);
         const viewport = page.getViewport({ scale: 0.3 });
@@ -47,7 +39,6 @@ const RotatePDF = () => {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // Render PDF page to canvas
         await page.render({
           canvasContext: context,
           viewport: viewport
@@ -57,9 +48,10 @@ const RotatePDF = () => {
         pagePreviews.push({ 
           id: i, 
           src, 
-          pageNumber: i + 1 
+          pageNumber: i + 1,
+          originalIndex: i
         });
-        pageRotations.push(0); // Default rotation
+        pageRotations.push(0); // Start with 0° rotation for each page
       }
 
       setPages(pagePreviews);
@@ -70,12 +62,21 @@ const RotatePDF = () => {
     }
   };
 
-  const handleRotationChange = (index, delta) => {
-    setRotations((prev) =>
-      prev.map((rot, i) =>
-        i === index ? (rot + delta + 360) % 360 : rot
-      )
-    );
+  const handleRotationChange = (index, angle) => {
+    setRotations(prev => {
+      const newRotations = [...prev];
+      // Add the angle and ensure it stays within 0-360 degrees
+      newRotations[index] = (newRotations[index] + angle + 360) % 360;
+      return newRotations;
+    });
+  };
+
+  const handleSetRotation = (index, angle) => {
+    setRotations(prev => {
+      const newRotations = [...prev];
+      newRotations[index] = angle;
+      return newRotations;
+    });
   };
 
   const handleDownload = async () => {
@@ -94,9 +95,14 @@ const RotatePDF = () => {
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const newPdf = await PDFDocument.create();
 
+      // Copy each page and apply the rotation
       for (let i = 0; i < pdfDoc.getPageCount(); i++) {
         const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
-        copiedPage.setRotation((rotations[i] * Math.PI) / 180);
+        
+        // Apply rotation (convert degrees to radians)
+        const rotationAngle = (rotations[i] * Math.PI) / 180;
+        copiedPage.setRotation(rotationAngle);
+        
         newPdf.addPage(copiedPage);
       }
 
@@ -121,6 +127,14 @@ const RotatePDF = () => {
     }
   };
 
+  const rotateAll = (angle) => {
+    setRotations(prev => prev.map(() => angle));
+  };
+
+  const resetAll = () => {
+    setRotations(prev => prev.map(() => 0));
+  };
+
   return (
     <div className="rotate-pages">
       <div className="rotate-pages-container">
@@ -139,6 +153,45 @@ const RotatePDF = () => {
 
         {pages.length > 0 && (
           <>
+            {/* Bulk Actions */}
+            <div className="bulk-actions" style={{ 
+              marginBottom: '20px', 
+              display: 'flex', 
+              gap: '10px', 
+              justifyContent: 'center',
+              flexWrap: 'wrap'
+            }}>
+              <button 
+                type="button"
+                className="bulk-btn"
+                onClick={() => rotateAll(90)}
+              >
+                Rotate All 90°
+              </button>
+              <button 
+                type="button"
+                className="bulk-btn"
+                onClick={() => rotateAll(180)}
+              >
+                Rotate All 180°
+              </button>
+              <button 
+                type="button"
+                className="bulk-btn"
+                onClick={() => rotateAll(270)}
+              >
+                Rotate All 270°
+              </button>
+              <button 
+                type="button"
+                className="bulk-btn reset-btn"
+                onClick={resetAll}
+              >
+                Reset All
+              </button>
+            </div>
+
+            {/* Page Grid with Rotation Controls */}
             <div className="page-grid">
               {pages.map((page, index) => (
                 <div key={page.id} className="page-preview">
@@ -146,21 +199,81 @@ const RotatePDF = () => {
                     src={page.src}
                     alt={`Page ${page.pageNumber}`}
                     className="thumbnail-img"
+                    style={{
+                      transform: `rotate(${rotations[index]}deg)`,
+                      transition: 'transform 0.3s ease'
+                    }}
                   />
                   <div className="page-number">Page {page.pageNumber}</div>
+                  
+                  {/* Rotation Controls */}
                   <div className="rotation-controls">
                     <button 
                       type="button"
+                      className="rotate-btn left"
                       onClick={() => handleRotationChange(index, -90)}
+                      title="Rotate -90°"
                     >
-                      ⟲
+                      ⟲ -90°
                     </button>
-                    <span className="rotation-degree">{rotations[index]}°</span>
+                    
+                    <div className="rotation-display">
+                      <select
+                        value={rotations[index]}
+                        onChange={(e) => handleSetRotation(index, parseInt(e.target.value))}
+                        className="rotation-select"
+                      >
+                        <option value={0}>0°</option>
+                        <option value={90}>90°</option>
+                        <option value={180}>180°</option>
+                        <option value={270}>270°</option>
+                      </select>
+                    </div>
+                    
                     <button 
                       type="button"
+                      className="rotate-btn right"
                       onClick={() => handleRotationChange(index, 90)}
+                      title="Rotate +90°"
                     >
-                      ⟳
+                      +90° ⟳
+                    </button>
+                  </div>
+
+                  {/* Quick Rotation Buttons */}
+                  <div className="quick-actions" style={{ 
+                    marginTop: '8px', 
+                    display: 'flex', 
+                    gap: '5px',
+                    justifyContent: 'center'
+                  }}>
+                    <button 
+                      type="button"
+                      className="quick-btn"
+                      onClick={() => handleSetRotation(index, 0)}
+                    >
+                      0°
+                    </button>
+                    <button 
+                      type="button"
+                      className="quick-btn"
+                      onClick={() => handleSetRotation(index, 90)}
+                    >
+                      90°
+                    </button>
+                    <button 
+                      type="button"
+                      className="quick-btn"
+                      onClick={() => handleSetRotation(index, 180)}
+                    >
+                      180°
+                    </button>
+                    <button 
+                      type="button"
+                      className="quick-btn"
+                      onClick={() => handleSetRotation(index, 270)}
+                    >
+                      270°
                     </button>
                   </div>
                 </div>
@@ -184,7 +297,7 @@ const RotatePDF = () => {
               disabled={loading}
               type="button"
             >
-              {loading ? "Creating PDF..." : "Download Rotated PDF"}
+              {loading ? "Creating Rotated PDF..." : "Download Rotated PDF"}
             </button>
           </>
         )}
@@ -208,7 +321,7 @@ const RotatePDF = () => {
             marginTop: '20px',
             opacity: 0.8 
           }}>
-            Select a PDF file to see page previews
+            Select a PDF file to see page previews and set rotations
           </div>
         )}
       </div>
