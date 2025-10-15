@@ -1,185 +1,194 @@
-import React, { useState, useRef } from 'react';
-import './RemovePages.css';
-import { PDFDocument } from 'pdf-lib';
+import React, { useState, useRef } from "react";
+import { PDFDocument } from "pdf-lib";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import "./ReorderPages.css";
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const ReorderPages = () => {
   const [file, setFile] = useState(null);
-  const [pageOrder, setPageOrder] = useState('');
-  const [fileName, setFileName] = useState('');
+  const [pageImages, setPageImages] = useState([]);
+  const [pageOrder, setPageOrder] = useState([]);
+  const [reorderedPdfUrl, setReorderedPdfUrl] = useState(null);
+  const [pdfName, setPdfName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef();
 
-  const resetForm = () => {
-    setFile(null);
-    setPageOrder('');
-    setFileName('');
-    setError('');
-    setSuccess(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+  // Handle PDF upload and generate thumbnails
+  const handleFileChange = async (event) => {
+    const selectedFile = event.target.files[0];
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
+    setReorderedPdfUrl(null);
+    setLoading(true);
+
+    const baseName = selectedFile.name.replace(".pdf", "");
+    setPdfName(`${baseName}-reordered`);
+
+    const fileReader = new FileReader();
+    fileReader.onload = async function () {
+      try {
+        const typedarray = new Uint8Array(this.result);
+        const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+        const pdf = await loadingTask.promise;
+        const images = [];
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 1 });
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          await page.render({ canvasContext: context, viewport }).promise;
+          images.push({ pageNumber: i, image: canvas.toDataURL() });
+        }
+
+        setPageImages(images);
+        setPageOrder(images.map((_, idx) => idx)); // store original order
+      } catch (err) {
+        console.error("PDF render error:", err);
+        alert("Error reading PDF. Please try another file.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fileReader.readAsArrayBuffer(selectedFile);
   };
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.type === 'application/pdf') {
-      setFile(selectedFile);
-      // Set default filename based on the uploaded file
-      const baseName = selectedFile.name.replace('.pdf', '');
-      setFileName(`${baseName}-reordered`);
-      setError('');
-    } else {
-      setFile(null);
-      setError('Please select a valid PDF file');
-    }
+  // Handle drag and drop reorder
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const newOrder = Array.from(pageOrder);
+    const [moved] = newOrder.splice(result.source.index, 1);
+    newOrder.splice(result.destination.index, 0, moved);
+    setPageOrder(newOrder);
   };
 
-  const handlePageOrderChange = (e) => {
-    setPageOrder(e.target.value);
-    setError('');
-  };
-
-  const handleFileNameChange = (e) => {
-    setFileName(e.target.value);
-    setError('');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess(false);
-
-    if (!file) {
-      setError('Please select a PDF file');
-      return;
-    }
-
-    if (!pageOrder) {
-      setError('Please enter the new page order');
-      return;
-    }
-
-    if (!fileName) {
-      setError('Please enter a filename');
+  // Generate new reordered PDF
+  const handleReorder = async () => {
+    if (!file || pageOrder.length === 0) {
+      alert("Please select a PDF file first.");
       return;
     }
 
     setLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const existingPdfBytes = new Uint8Array(event.target.result);
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const newPdfDoc = await PDFDocument.create();
 
-    try {
-      // Parse the page order
-      const newOrder = pageOrder.split(',').map(num => parseInt(num.trim()));
-      
-      // Validate that all entries are numbers
-      if (newOrder.some(isNaN)) {
-        throw new Error('Invalid page number format');
-      }
-
-      // Read the PDF file
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const totalPages = pdfDoc.getPageCount();
-
-      // Validate page numbers
-      for (const pageNum of newOrder) {
-        if (pageNum < 1 || pageNum > totalPages) {
-          throw new Error(`Page ${pageNum} is out of range (1-${totalPages})`);
+        for (let idx of pageOrder) {
+          const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [idx]);
+          newPdfDoc.addPage(copiedPage);
         }
+
+        const newPdfBytes = await newPdfDoc.save();
+        const newPdfBlob = new Blob([newPdfBytes], { type: "application/pdf" });
+        const newPdfUrl = URL.createObjectURL(newPdfBlob);
+        setReorderedPdfUrl(newPdfUrl);
+      } catch (err) {
+        console.error("Error reordering pages:", err);
+        alert("Something went wrong while reordering pages.");
+      } finally {
+        setLoading(false);
       }
-
-      // Validate that all pages are included
-      const uniquePages = new Set(newOrder);
-      if (uniquePages.size !== totalPages) {
-        throw new Error(`Please include all pages (1-${totalPages}) in the new order`);
-      }
-
-      // Create a new PDF document
-      const newPdfDoc = await PDFDocument.create();
-
-      // Copy pages in the new order
-      for (const pageNum of newOrder) {
-        const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageNum - 1]);
-        newPdfDoc.addPage(copiedPage);
-      }
-
-      // Save the new PDF
-      const pdfBytes = await newPdfDoc.save();
-      
-      // Create a download link
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${fileName}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      setSuccess(true);
-      resetForm();
-    } catch (err) {
-      console.error('Error:', err);
-      setError(err.message || 'An error occurred while reordering pages');
-    } finally {
-      setLoading(false);
-    }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   return (
-    <div className="remove-pages">
-      <div className="remove-pages-container">
-        <h2>Reorder PDF Pages</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="pdfFile">Select PDF File:</label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              id="pdfFile"
-              accept=".pdf"
-              onChange={handleFileChange}
-              required
-            />
-          </div>
+    <div className="reorder">
+      <div className="reorder-container">
+        <h2>Reorder Pages in PDF</h2>
+        <input
+          type="file"
+          accept="application/pdf"
+          onChange={handleFileChange}
+          ref={fileInputRef}
+        />
 
-          <div className="form-group">
-            <label htmlFor="pageOrder">New Page Order:</label>
+        {loading && <p>Loading pages...</p>}
+
+        {pageImages.length > 0 && (
+          <>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="pages" direction="horizontal">
+                {(provided) => (
+                  <div
+                    className="reorder-thumbnails"
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                  >
+                    {pageOrder.map((idx, index) => (
+                      <Draggable
+                        key={pageImages[idx].pageNumber}
+                        draggableId={`page-${pageImages[idx].pageNumber}`}
+                        index={index}
+                      >
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`reorder-thumb ${
+                              snapshot.isDragging ? "dragging" : ""
+                            }`}
+                          >
+                            <img
+                              src={pageImages[idx].image}
+                              alt={`Page ${pageImages[idx].pageNumber}`}
+                            />
+                            <span className="page-number">
+                              {pageImages[idx].pageNumber}
+                            </span>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+
             <input
               type="text"
-              id="pageOrder"
-              value={pageOrder}
-              onChange={handlePageOrderChange}
-              placeholder="e.g., 3,1,2,4"
-              required
+              placeholder="Enter PDF name (without .pdf)"
+              value={pdfName}
+              onChange={(e) => setPdfName(e.target.value)}
+              style={{ marginTop: 16 }}
             />
-            <small className="help-text">
-              Enter the new order of pages (e.g., 3,1,2,4)
-            </small>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="fileName">Output Filename:</label>
-            <input
-              type="text"
-              id="fileName"
-              value={fileName}
-              onChange={handleFileNameChange}
-              placeholder="Enter filename (without .pdf extension)"
-              required
-            />
-          </div>
-          <button type="submit" disabled={loading}>
-            {loading ? 'Reordering Pages...' : 'Reorder Pages'}
-          </button>
-        </form>
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">Pages reordered successfully!</div>}
+            <button
+              onClick={handleReorder}
+              disabled={loading}
+              className="reorder-btn"
+            >
+              {loading ? "Reordering..." : "Reorder Pages"}
+            </button>
+          </>
+        )}
+
+        {reorderedPdfUrl && (
+          <a
+            href={reorderedPdfUrl}
+            download={`${pdfName || "reordered"}.pdf`}
+            className="download-btn"
+          >
+            Download Reordered PDF
+          </a>
+        )}
       </div>
     </div>
   );
 };
 
-export default ReorderPages; 
+export default ReorderPages;
