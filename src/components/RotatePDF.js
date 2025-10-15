@@ -13,7 +13,6 @@ const RotatePDF = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [completedPages, setCompletedPages] = useState([]);
   const fileInputRef = useRef();
 
   const handleFileChange = async (event) => {
@@ -25,7 +24,6 @@ const RotatePDF = () => {
     setPages([]);
     setRotations([]);
     setCurrentPageIndex(0);
-    setCompletedPages([]);
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -36,7 +34,7 @@ const RotatePDF = () => {
 
       for (let i = 0; i < pdf.numPages; i++) {
         const page = await pdf.getPage(i + 1);
-        const viewport = page.getViewport({ scale: 0.3 });
+        const viewport = page.getViewport({ scale: 0.2 }); // Smaller scale for faster loading
 
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
@@ -66,36 +64,20 @@ const RotatePDF = () => {
     }
   };
 
-  const handleRotationChange = (angle) => {
+  const handleRotationChange = (pageIndex, angle) => {
     setRotations(prev => {
       const newRotations = [...prev];
-      newRotations[currentPageIndex] = angle;
+      newRotations[pageIndex] = angle;
       return newRotations;
     });
   };
 
-  const markPageAsCompleted = () => {
-    if (!completedPages.includes(currentPageIndex)) {
-      setCompletedPages(prev => [...prev, currentPageIndex]);
-    }
+  const rotateAll = (angle) => {
+    setRotations(prev => prev.map(() => angle));
   };
 
-  const goToNextPage = () => {
-    markPageAsCompleted();
-    if (currentPageIndex < pages.length - 1) {
-      setCurrentPageIndex(currentPageIndex + 1);
-    }
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPageIndex > 0) {
-      setCurrentPageIndex(currentPageIndex - 1);
-    }
-  };
-
-  const goToPage = (pageIndex) => {
-    markPageAsCompleted();
-    setCurrentPageIndex(pageIndex);
+  const resetAll = () => {
+    setRotations(prev => prev.map(() => 0));
   };
 
   const handleDownload = async () => {
@@ -140,18 +122,22 @@ const RotatePDF = () => {
       setSuccess(true);
     } catch (err) {
       console.error("Error creating PDF:", err);
-      setError("Error creating rotated PDF. Please try again.");
+      setError("Error creating rotated PDF. Please try again. Error: " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const isAllPagesCompleted = completedPages.length === pages.length && pages.length > 0;
+  // Count how many pages have been rotated (not 0 degrees)
+  const rotatedPagesCount = rotations.filter(rot => rot !== 0).length;
 
   return (
     <div className="rotate-pages">
       <div className="rotate-pages-container">
-        <h2>Rotate PDF Pages - Step by Step</h2>
+        <h2>Rotate PDF Pages</h2>
+        <p style={{ color: '#fff', opacity: 0.8, marginBottom: '20px' }}>
+          Rotate only the pages you need. Unchanged pages will remain as is.
+        </p>
 
         <div className="form-group">
           <label htmlFor="pdfFile">Select PDF File:</label>
@@ -166,233 +152,211 @@ const RotatePDF = () => {
 
         {pages.length > 0 && (
           <>
-            {/* Progress Indicator */}
-            <div className="progress-section" style={{ 
+            {/* Bulk Actions */}
+            <div className="bulk-actions" style={{ 
               marginBottom: '20px', 
-              textAlign: 'center' 
+              display: 'flex', 
+              gap: '10px', 
+              justifyContent: 'center',
+              flexWrap: 'wrap'
             }}>
-              <div className="progress-text" style={{ 
-                color: '#fff', 
-                marginBottom: '10px',
-                fontSize: '16px',
-                fontWeight: 'bold'
-              }}>
-                Page {currentPageIndex + 1} of {pages.length}
-                {completedPages.includes(currentPageIndex) && " ✓"}
-              </div>
-              
-              <div className="progress-bar" style={{
-                width: '100%',
-                height: '8px',
-                backgroundColor: 'rgba(255,255,255,0.3)',
-                borderRadius: '4px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${((currentPageIndex + 1) / pages.length) * 100}%`,
-                  height: '100%',
-                  background: 'linear-gradient(135deg, #00c6ff, #0072ff)',
-                  transition: 'width 0.3s ease'
-                }}></div>
-              </div>
-
-              <div className="page-indicators" style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '5px',
-                marginTop: '10px',
-                flexWrap: 'wrap'
-              }}>
-                {pages.map((page, index) => (
-                  <button
-                    key={page.id}
-                    type="button"
-                    className={`page-indicator ${index === currentPageIndex ? 'active' : ''} ${completedPages.includes(index) ? 'completed' : ''}`}
-                    onClick={() => goToPage(index)}
-                    style={{
-                      width: '30px',
-                      height: '30px',
-                      borderRadius: '50%',
-                      border: '2px solid',
-                      borderColor: index === currentPageIndex ? '#0072ff' : 
-                                  completedPages.includes(index) ? '#28a745' : '#fff',
-                      background: completedPages.includes(index) ? '#28a745' : 'transparent',
-                      color: index === currentPageIndex ? '#0072ff' : 
-                            completedPages.includes(index) ? '#fff' : '#fff',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-              </div>
+              <button 
+                type="button"
+                className="bulk-btn"
+                onClick={() => rotateAll(90)}
+              >
+                Rotate All 90°
+              </button>
+              <button 
+                type="button"
+                className="bulk-btn"
+                onClick={() => rotateAll(180)}
+              >
+                Rotate All 180°
+              </button>
+              <button 
+                type="button"
+                className="bulk-btn"
+                onClick={() => rotateAll(270)}
+              >
+                Rotate All 270°
+              </button>
+              <button 
+                type="button"
+                className="bulk-btn reset-btn"
+                onClick={resetAll}
+              >
+                Reset All
+              </button>
             </div>
 
-            {/* Current Page View */}
-            <div className="current-page-section" style={{
-              textAlign: 'center',
-              marginBottom: '30px'
+            {/* Quick Stats */}
+            <div style={{ 
+              textAlign: 'center', 
+              color: '#fff', 
+              marginBottom: '15px',
+              background: 'rgba(255,255,255,0.1)',
+              padding: '10px',
+              borderRadius: '8px'
             }}>
-              <h3 style={{ color: '#fff', marginBottom: '15px' }}>
-                Current Page: {currentPageIndex + 1}
-              </h3>
-              
-              <div className="current-page-preview" style={{
-                display: 'inline-block',
-                background: 'white',
-                padding: '20px',
-                borderRadius: '10px',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
-              }}>
-                <img
-                  src={pages[currentPageIndex].src}
-                  alt={`Page ${pages[currentPageIndex].pageNumber}`}
-                  style={{
-                    width: '200px',
-                    height: 'auto',
-                    transform: `rotate(${rotations[currentPageIndex]}deg)`,
-                    transition: 'transform 0.3s ease',
-                    marginBottom: '15px'
-                  }}
-                />
-                
-                <div className="rotation-controls" style={{
-                  marginBottom: '15px'
-                }}>
-                  <div style={{ 
-                    color: '#333', 
-                    marginBottom: '10px',
-                    fontWeight: 'bold'
-                  }}>
-                    Current Rotation: {rotations[currentPageIndex]}°
-                  </div>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: '10px', 
-                    justifyContent: 'center',
-                    flexWrap: 'wrap'
-                  }}>
-                    <button 
-                      type="button"
-                      className="rotation-option"
-                      onClick={() => handleRotationChange(0)}
-                      style={{
-                        padding: '10px 15px',
-                        background: rotations[currentPageIndex] === 0 ? '#0072ff' : '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      0°
-                    </button>
-                    <button 
-                      type="button"
-                      className="rotation-option"
-                      onClick={() => handleRotationChange(90)}
-                      style={{
-                        padding: '10px 15px',
-                        background: rotations[currentPageIndex] === 90 ? '#0072ff' : '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      90°
-                    </button>
-                    <button 
-                      type="button"
-                      className="rotation-option"
-                      onClick={() => handleRotationChange(180)}
-                      style={{
-                        padding: '10px 15px',
-                        background: rotations[currentPageIndex] === 180 ? '#0072ff' : '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      180°
-                    </button>
-                    <button 
-                      type="button"
-                      className="rotation-option"
-                      onClick={() => handleRotationChange(270)}
-                      style={{
-                        padding: '10px 15px',
-                        background: rotations[currentPageIndex] === 270 ? '#0072ff' : '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      270°
-                    </button>
-                  </div>
-                </div>
+              <strong>Total Pages: {pages.length}</strong> | 
+              <strong style={{ color: '#4facfe' }}> Rotated: {rotatedPagesCount}</strong> | 
+              <strong style={{ color: '#28a745' }}> Unchanged: {pages.length - rotatedPagesCount}</strong>
+            </div>
 
-                {/* Navigation Controls */}
-                <div className="navigation-controls" style={{
-                  display: 'flex',
-                  gap: '10px',
-                  justifyContent: 'center',
-                  marginTop: '20px'
-                }}>
-                  <button 
-                    type="button"
-                    onClick={goToPreviousPage}
-                    disabled={currentPageIndex === 0}
-                    style={{
-                      padding: '10px 20px',
-                      background: currentPageIndex === 0 ? '#6c757d' : '#0072ff',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '5px',
-                      cursor: currentPageIndex === 0 ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    ← Previous
-                  </button>
-                  
-                  <button 
-                    type="button"
-                    onClick={markPageAsCompleted}
-                    style={{
-                      padding: '10px 20px',
-                      background: completedPages.includes(currentPageIndex) ? '#28a745' : '#17a2b8',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '5px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {completedPages.includes(currentPageIndex) ? '✓ Completed' : 'Mark Complete'}
-                  </button>
-                  
-                  <button 
-                    type="button"
-                    onClick={goToNextPage}
-                    disabled={currentPageIndex === pages.length - 1}
-                    style={{
-                      padding: '10px 20px',
-                      background: currentPageIndex === pages.length - 1 ? '#6c757d' : '#0072ff',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '5px',
-                      cursor: currentPageIndex === pages.length - 1 ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    Next →
-                  </button>
+            {/* Page Grid - All pages visible */}
+            <div className="page-grid">
+              {pages.map((page, index) => (
+                <div key={page.id} className="page-preview">
+                  <div style={{ 
+                    position: 'relative',
+                    background: 'white',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: rotations[index] !== 0 ? '3px solid #4facfe' : '1px solid #ddd'
+                  }}>
+                    <img
+                      src={page.src}
+                      alt={`Page ${page.pageNumber}`}
+                      style={{
+                        width: '120px',
+                        height: '160px',
+                        objectFit: 'contain',
+                        transform: `rotate(${rotations[index]}deg)`,
+                        transition: 'transform 0.3s ease',
+                        marginBottom: '8px'
+                      }}
+                    />
+                    
+                    <div style={{ 
+                      textAlign: 'center', 
+                      fontWeight: 'bold', 
+                      marginBottom: '8px',
+                      color: '#333'
+                    }}>
+                      Page {page.pageNumber}
+                      {rotations[index] !== 0 && (
+                        <span style={{ 
+                          color: '#4facfe', 
+                          fontSize: '12px',
+                          display: 'block'
+                        }}>
+                          {rotations[index]}°
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Rotation Controls */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '5px',
+                      marginBottom: '8px'
+                    }}>
+                      <button 
+                        type="button"
+                        onClick={() => handleRotationChange(index, 0)}
+                        style={{
+                          padding: '4px 8px',
+                          background: rotations[index] === 0 ? '#0072ff' : '#6c757d',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '11px'
+                        }}
+                      >
+                        0°
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleRotationChange(index, 90)}
+                        style={{
+                          padding: '4px 8px',
+                          background: rotations[index] === 90 ? '#0072ff' : '#6c757d',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '11px'
+                        }}
+                      >
+                        90°
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleRotationChange(index, 180)}
+                        style={{
+                          padding: '4px 8px',
+                          background: rotations[index] === 180 ? '#0072ff' : '#6c757d',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '11px'
+                        }}
+                      >
+                        180°
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleRotationChange(index, 270)}
+                        style={{
+                          padding: '4px 8px',
+                          background: rotations[index] === 270 ? '#0072ff' : '#6c757d',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '11px'
+                        }}
+                      >
+                        270°
+                      </button>
+                    </div>
+
+                    {/* Quick Rotate Buttons */}
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '4px',
+                      justifyContent: 'center'
+                    }}>
+                      <button 
+                        type="button"
+                        onClick={() => handleRotationChange(index, (rotations[index] - 90 + 360) % 360)}
+                        style={{
+                          padding: '3px 6px',
+                          background: '#4facfe',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          fontSize: '10px'
+                        }}
+                        title="Rotate -90°"
+                      >
+                        ⟲ -90
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleRotationChange(index, (rotations[index] + 90) % 360)}
+                        style={{
+                          padding: '3px 6px',
+                          background: '#4facfe',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          fontSize: '10px'
+                        }}
+                        title="Rotate +90°"
+                      >
+                        +90 ⟳
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
 
             {/* Download Section */}
@@ -424,31 +388,33 @@ const RotatePDF = () => {
               <button 
                 className="download-btn" 
                 onClick={handleDownload} 
-                disabled={loading || !isAllPagesCompleted}
+                disabled={loading}
                 type="button"
                 style={{
                   padding: '15px 30px',
                   fontSize: '18px',
-                  background: isAllPagesCompleted ? 
-                    'linear-gradient(135deg, #00c6ff, #0072ff)' : 
-                    '#6c757d',
+                  background: 'linear-gradient(135deg, #00c6ff, #0072ff)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: isAllPagesCompleted ? 'pointer' : 'not-allowed',
-                  opacity: isAllPagesCompleted ? 1 : 0.6
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1
                 }}
               >
-                {loading ? "Creating Rotated PDF..." : 
-                 isAllPagesCompleted ? "Download Rotated PDF" : 
-                 "Complete All Pages First"}
+                {loading ? "Creating Rotated PDF..." : "Download Rotated PDF"}
               </button>
 
-              {!isAllPagesCompleted && (
-                <div style={{ color: '#ffcc00', marginTop: '10px' }}>
-                  ⚠ Complete all pages before downloading
-                </div>
-              )}
+              <div style={{ color: '#fff', marginTop: '10px', fontSize: '14px' }}>
+                {rotatedPagesCount > 0 ? (
+                  <span style={{ color: '#4facfe' }}>
+                    ✓ {rotatedPagesCount} page{rotatedPagesCount !== 1 ? 's' : ''} will be rotated
+                  </span>
+                ) : (
+                  <span style={{ color: '#ffcc00' }}>
+                    ⚠ No pages rotated yet. Download will create original PDF.
+                  </span>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -472,7 +438,7 @@ const RotatePDF = () => {
             marginTop: '20px',
             opacity: 0.8 
           }}>
-            Select a PDF file to start rotating pages one by one
+            Select a PDF file to rotate pages
           </div>
         )}
       </div>
