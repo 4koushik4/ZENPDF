@@ -108,7 +108,7 @@ const RotatePDF = () => {
 
   return (
     <div className="rotate-pages">
-      <div className="rotate-pages-conatiner">
+      <div className="rotate-pages-container">
         <h2>Rotate PDF Pages</h2>
 
         <div className="form-group">
