@@ -1,4 +1,3 @@
-/* Outer layout (matches remove-pages style) */
 .reorder {
   text-align: center;
   padding: 50px 20px;
@@ -10,8 +9,7 @@
   justify-content: center;
 }
 
-/* Main container */
-.reorder-container {
+.remove-pages-container {
   max-width: 800px;
   margin: 50px auto;
   padding: 30px;
@@ -24,14 +22,14 @@
   transition: 0.3s;
 }
 
-.reorder-container:hover {
+.remove-pages-container:hover {
   transform: translateY(-5px);
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3);
   background: linear-gradient(135deg, #fbc2eb, #a6c1ee);
   color: black;
 }
 
-.reorder-container h2 {
+.remove-pages-container h2 {
   font-size: 28px;
   font-weight: bold;
   text-transform: uppercase;
@@ -39,9 +37,8 @@
   letter-spacing: 1.5px;
 }
 
-/* Input field */
-.reorder-container input[type="file"],
-.reorder-container input[type="text"] {
+/* File input */
+.remove-pages-container input[type="file"] {
   width: 90%;
   padding: 14px;
   margin: 12px 0;
@@ -55,77 +52,23 @@
   transition: 0.3s;
 }
 
-.reorder-container input:hover {
+.remove-pages-container input:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Button styling */
-.reorder-container button,
-.download-btn {
-  width: 100%;
-  padding: 14px;
-  font-size: 18px;
-  font-weight: bold;
-  text-transform: uppercase;
-  color: #fff;
-  background: linear-gradient(135deg, #00c6ff, #0072ff);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.3s;
-  box-shadow: 0 5px 15px rgba(0, 150, 255, 0.4);
-  margin-top: 10px;
-}
-
-.reorder-container button:hover,
-.download-btn:hover {
-  background: linear-gradient(135deg, #0072ff, #00c6ff);
-  box-shadow: 0 7px 20px rgba(0, 150, 255, 0.6);
-}
-
-.reorder-container button:disabled {
-  background: linear-gradient(135deg, #cccccc, #999999);
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-/* Error + Success messages */
-.error-message {
-  margin-top: 1rem;
-  padding: 14px;
-  background: rgba(255, 0, 0, 0.2);
-  color: #fff;
-  border-radius: 8px;
-  text-align: center;
-  font-weight: 500;
-  box-shadow: 0 5px 15px rgba(255, 0, 0, 0.2);
-}
-
-.success-message {
-  margin-top: 1rem;
-  padding: 14px;
-  background: rgba(40, 167, 69, 0.2);
-  color: #fff;
-  border-radius: 8px;
-  text-align: center;
-  font-weight: 500;
-  box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
-}
-
-/* Thumbnails grid */
+/* Grid + smaller previews */
 .page-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* smaller */
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.8rem;
   margin-top: 1rem;
-  padding: 0.75rem;
+  padding: 0.8rem;
   background: rgba(255, 255, 255, 0.4);
   border-radius: 8px;
-  max-height: 400px; /* slightly smaller */
+  max-height: 400px;
   overflow-y: auto;
 }
 
-/* Individual thumbnail */
 .page-preview {
   position: relative;
   background: white;
@@ -134,11 +77,9 @@
   cursor: move;
   transition: all 0.3s ease;
   overflow: hidden;
-  height: 130px; /* reduced height */
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  width: 120px;
+  height: 160px;
+  margin: 0 auto;
 }
 
 .page-preview:hover {
@@ -146,30 +87,29 @@
   box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Image fit */
-.page-preview img {
-  width: 100%;
-  height: 100%;
+/* ✅ make thumbnails small */
+.thumbnail-img {
+  width: 110px;
+  height: 150px;
   object-fit: contain;
+  border-radius: 6px;
+  margin: 5px auto 0;
   display: block;
-  border-radius: 8px;
 }
 
-/* Page number */
 .page-number {
   position: absolute;
-  bottom: 0;
+  bottom: 4px;
   left: 0;
   right: 0;
   background: rgba(52, 152, 219, 0.9);
   color: white;
-  padding: 0.3rem;
+  padding: 0.2rem;
   text-align: center;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 500;
   border-radius: 0 0 8px 8px;
 }
-
 
 .page-preview.dragging {
   opacity: 0.5;
@@ -180,17 +120,21 @@
 .page-grid::-webkit-scrollbar {
   width: 8px;
 }
-
-.page-grid::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
 .page-grid::-webkit-scrollbar-thumb {
   background: #3498db;
   border-radius: 4px;
 }
-
 .page-grid::-webkit-scrollbar-thumb:hover {
   background: #2980b9;
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 14px;
+  background: rgba(255, 0, 0, 0.2);
+  color: #fff;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+  box-shadow: 0 5px 15px rgba(255, 0, 0, 0.2);
 }
