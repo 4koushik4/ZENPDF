@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import { PDFDocument } from "pdf-lib";
-import "./RotatePDF.css";
-
+import './RotatePDF.css';
 
 // Import PDF.js
 const pdfjsLib = window['pdfjs-dist/build/pdf'];
